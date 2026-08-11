@@ -5,50 +5,28 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-
-export const FREQUENCY_OPTIONS = [
-  { value: 'one-time', label: 'One-Time' },
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'quarterly', label: 'Quarterly' },
-  { value: 'yearly', label: 'Yearly' },
-];
-
-export const PRIORITY_OPTIONS = [
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high', label: 'High' },
-];
-
-export const DAY_OPTIONS = [
-  { value: 0, label: 'Sunday' },
-  { value: 1, label: 'Monday' },
-  { value: 2, label: 'Tuesday' },
-  { value: 3, label: 'Wednesday' },
-  { value: 4, label: 'Thursday' },
-  { value: 5, label: 'Friday' },
-  { value: 6, label: 'Saturday' },
-];
-
-const DEFAULT_FREQUENCY = 'daily';
-const DEFAULT_PRIORITY = 'medium';
-
-function supportsRecurringDay(frequency) {
-  return frequency !== 'one-time' && frequency !== 'daily';
-}
+import {
+  FREQUENCY_OPTIONS,
+  PRIORITY_OPTIONS,
+  DAY_OPTIONS,
+  DEFAULT_FREQUENCY,
+  DEFAULT_PRIORITY,
+  supportsRecurringDay,
+} from '../../constants/taskOptions';
 
 /**
- * Form for adding a new to-do. Calls onAdd({ text, dueDate, frequency, recurringDay, priority })
- * and resets itself.
+ * Form for adding or editing a to-do. Calls onSubmit({ text, description, dueDate, frequency,
+ * recurringDay, priority }). In "add" mode (no initialValues) it clears itself after submit.
+ * Pass initialValues (an existing todo) to prefill for editing — completed/completedDate aren't
+ * part of the form and are left untouched by the caller's merge.
  */
-export function TodoForm({ onAdd }) {
-  const [text, setText] = useState('');
-  const [description, setDescription] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [frequency, setFrequency] = useState(DEFAULT_FREQUENCY);
-  const [recurringDay, setRecurringDay] = useState('');
-  const [priority, setPriority] = useState(DEFAULT_PRIORITY);
+export function TodoForm({ initialValues, onSubmit, submitLabel = 'Add' }) {
+  const [text, setText] = useState(initialValues?.text ?? '');
+  const [description, setDescription] = useState(initialValues?.description ?? '');
+  const [dueDate, setDueDate] = useState(initialValues?.dueDate ?? '');
+  const [frequency, setFrequency] = useState(initialValues?.frequency ?? DEFAULT_FREQUENCY);
+  const [recurringDay, setRecurringDay] = useState(initialValues?.recurringDay ?? '');
+  const [priority, setPriority] = useState(initialValues?.priority ?? DEFAULT_PRIORITY);
 
   const showRecurringDay = supportsRecurringDay(frequency);
 
@@ -62,22 +40,23 @@ export function TodoForm({ onAdd }) {
     const trimmed = text.trim();
     if (!trimmed) return;
 
-    onAdd({
+    onSubmit({
       text: trimmed,
       description: description.trim() || null,
-      completed: false,
       dueDate: dueDate || null,
       frequency,
       recurringDay: showRecurringDay && recurringDay !== '' ? recurringDay : null,
       priority,
     });
 
-    setText('');
-    setDescription('');
-    setDueDate('');
-    setFrequency(DEFAULT_FREQUENCY);
-    setRecurringDay('');
-    setPriority(DEFAULT_PRIORITY);
+    if (!initialValues) {
+      setText('');
+      setDescription('');
+      setDueDate('');
+      setFrequency(DEFAULT_FREQUENCY);
+      setRecurringDay('');
+      setPriority(DEFAULT_PRIORITY);
+    }
   }
 
   return (
@@ -237,7 +216,7 @@ export function TodoForm({ onAdd }) {
 
       <Box sx={{ textAlign: 'center', mt: 3 }}>
         <Button type="submit" variant="outlined" disableElevation sx={{ borderRadius: 2, px: 4 }}>
-          Add
+          {submitLabel}
         </Button>
       </Box>
     </Box>

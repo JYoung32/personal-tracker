@@ -5,18 +5,18 @@ import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import { useCollection } from '../../hooks/useCollection';
-import { HobbyForm } from './HobbyForm';
+import { VehicleForm } from './VehicleForm';
 import { NavigableRowList } from '../../components/common/NavigableRowList';
 
-export function HobbiesPage() {
-  const { items: hobbies, loading, error, addItem, removeItem } = useCollection('hobbies');
+export function GaragePage() {
+  const { items: vehicles, loading, error, addItem, removeItem } = useCollection('garageVehicles');
   const navigate = useNavigate();
 
   return (
     <Container maxWidth="sm" sx={{ py: 8 }}>
       <Box sx={{ mb: 7, textAlign: 'center' }}>
         <Typography variant="h4" fontWeight={500} align="center" gutterBottom>
-          Hobby Tracker
+          Garage
         </Typography>
       </Box>
 
@@ -26,7 +26,7 @@ export function HobbiesPage() {
         </Alert>
       )}
 
-      <HobbyForm onAdd={addItem} />
+      <VehicleForm onAdd={addItem} />
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -34,11 +34,14 @@ export function HobbiesPage() {
         </Box>
       ) : (
         <NavigableRowList
-          items={hobbies}
-          getLabel={(hobby) => hobby.name}
-          onItemClick={(hobby) => navigate(`/hobbies/${hobby.id}`)}
+          items={vehicles}
+          getLabel={(vehicle) =>
+            [vehicle.make, vehicle.model, vehicle.trimLevel].filter(Boolean).join(' ')
+          }
+          getSecondaryLabel={(vehicle) => vehicle.color}
+          onItemClick={(vehicle) => navigate(`/garage/${vehicle.id}`)}
           onDelete={removeItem}
-          emptyMessage="Nothing here — add a hobby above."
+          emptyMessage="Nothing here — add a vehicle above."
         />
       )}
     </Container>

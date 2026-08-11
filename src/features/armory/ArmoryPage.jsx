@@ -5,18 +5,18 @@ import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import { useCollection } from '../../hooks/useCollection';
-import { HobbyForm } from './HobbyForm';
+import { ArmoryItemForm } from './ArmoryItemForm';
 import { NavigableRowList } from '../../components/common/NavigableRowList';
 
-export function HobbiesPage() {
-  const { items: hobbies, loading, error, addItem, removeItem } = useCollection('hobbies');
+export function ArmoryPage() {
+  const { items, loading, error, addItem, removeItem } = useCollection('armoryItems');
   const navigate = useNavigate();
 
   return (
     <Container maxWidth="sm" sx={{ py: 8 }}>
       <Box sx={{ mb: 7, textAlign: 'center' }}>
         <Typography variant="h4" fontWeight={500} align="center" gutterBottom>
-          Hobby Tracker
+          Armory
         </Typography>
       </Box>
 
@@ -26,7 +26,7 @@ export function HobbiesPage() {
         </Alert>
       )}
 
-      <HobbyForm onAdd={addItem} />
+      <ArmoryItemForm onAdd={addItem} />
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -34,11 +34,12 @@ export function HobbiesPage() {
         </Box>
       ) : (
         <NavigableRowList
-          items={hobbies}
-          getLabel={(hobby) => hobby.name}
-          onItemClick={(hobby) => navigate(`/hobbies/${hobby.id}`)}
+          items={items}
+          getLabel={(item) => [item.make, item.model].filter(Boolean).join(' ')}
+          getSecondaryLabel={(item) => item.caliber}
+          onItemClick={(item) => navigate(`/armory/${item.id}`)}
           onDelete={removeItem}
-          emptyMessage="Nothing here — add a hobby above."
+          emptyMessage="Nothing here — add an item above."
         />
       )}
     </Container>

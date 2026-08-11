@@ -5,11 +5,15 @@ import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { GarageNavItem } from './GarageNavItem';
+import { ArmoryNavItem } from './ArmoryNavItem';
 
 const NAV_LINKS = [
   { label: 'To-Do', path: '/todos' },
   { label: 'Hobbies', path: '/hobbies' },
   { label: 'Purchase Orders', path: '/purchases' },
+  { label: 'Garage', path: '/garage' },
+  { label: 'Armory', path: '/armory' },
 ];
 
 export function NavBar() {
@@ -30,11 +34,15 @@ export function NavBar() {
 
         {isAuthenticated && (
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            {NAV_LINKS.map((link) => (
-              <Button key={link.path} component={RouterLink} to={link.path} color="inherit">
-                {link.label}
-              </Button>
-            ))}
+            {NAV_LINKS.map((link) => {
+              if (link.path === '/garage') return <GarageNavItem key={link.path} />;
+              if (link.path === '/armory') return <ArmoryNavItem key={link.path} />;
+              return (
+                <Button key={link.path} component={RouterLink} to={link.path} color="inherit">
+                  {link.label}
+                </Button>
+              );
+            })}
             <Typography variant="body2" sx={{ ml: 2, opacity: 0.8 }}>
               {user?.username}
             </Typography>

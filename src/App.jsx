@@ -7,8 +7,16 @@ import { NavBar } from './components/layout/NavBar';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { LoginPage } from './features/auth/LoginPage';
 import { TodoPage } from './features/todos/TodoPage';
+import { TaskDetailPage } from './features/todos/TaskDetailPage';
 import { HobbiesPage } from './features/hobbies/HobbiesPage';
+import { HobbyDetailPage } from './features/hobbies/HobbyDetailPage';
+import { HobbyItemDetailPage } from './features/hobbies/HobbyItemDetailPage';
+import { HobbyListDetailPage } from './features/hobbies/HobbyListDetailPage';
 import { PurchasesPage } from './features/purchases/PurchasesPage';
+import { GaragePage } from './features/garage/GaragePage';
+import { VehicleDetailPage } from './features/garage/VehicleDetailPage';
+import { ArmoryPage } from './features/armory/ArmoryPage';
+import { ArmoryItemDetailPage } from './features/armory/ArmoryItemDetailPage';
 
 export default function App() {
   return (
@@ -28,6 +36,14 @@ export default function App() {
               }
             />
             <Route
+              path="/todos/:todoId"
+              element={
+                <ProtectedRoute>
+                  <TaskDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/hobbies"
               element={
                 <ProtectedRoute>
@@ -36,10 +52,66 @@ export default function App() {
               }
             />
             <Route
+              path="/hobbies/:hobbyId"
+              element={
+                <ProtectedRoute>
+                  <HobbyDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/hobbies/:hobbyId/items/:itemId"
+              element={
+                <ProtectedRoute>
+                  <HobbyItemDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/hobbies/:hobbyId/items/:itemId/lists/:listId"
+              element={
+                <ProtectedRoute>
+                  <HobbyListDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/purchases"
               element={
                 <ProtectedRoute>
                   <PurchasesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/garage"
+              element={
+                <ProtectedRoute>
+                  <GaragePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/garage/:vehicleId"
+              element={
+                <ProtectedRoute>
+                  <VehicleDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/armory"
+              element={
+                <ProtectedRoute>
+                  <ArmoryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/armory/:itemId"
+              element={
+                <ProtectedRoute>
+                  <ArmoryItemDetailPage />
                 </ProtectedRoute>
               }
             />

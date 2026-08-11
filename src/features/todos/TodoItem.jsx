@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Checkbox from '@mui/material/Checkbox';
 import IconButton from '@mui/material/IconButton';
@@ -5,7 +6,7 @@ import Typography from '@mui/material/Typography';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import { FREQUENCY_OPTIONS, PRIORITY_OPTIONS, DAY_OPTIONS } from './TodoForm';
+import { FREQUENCY_OPTIONS, PRIORITY_OPTIONS, DAY_OPTIONS } from '../../constants/taskOptions';
 
 const FREQUENCY_LABELS = Object.fromEntries(FREQUENCY_OPTIONS.map((opt) => [opt.value, opt.label]));
 const DAY_LABELS = Object.fromEntries(DAY_OPTIONS.map((opt) => [opt.value, opt.label]));
@@ -30,26 +31,32 @@ function parseDateOnly(dateStr) {
  * this component just renders and forwards events.
  */
 export function TodoItem({ todo, onToggleComplete, onDelete, onPriorityChange, showFrequency }) {
+  const navigate = useNavigate();
   const dueDate = todo.dueDate ? parseDateOnly(todo.dueDate) : null;
   const isOverdue = dueDate && !todo.completed && dueDate < new Date(new Date().toDateString());
   const frequencyLabel = showFrequency
     ? [FREQUENCY_LABELS[todo.frequency], DAY_LABELS[todo.recurringDay]].filter(Boolean).join(' · ')
     : null;
+  const metaText = [frequencyLabel, todo.sourceLabel].filter(Boolean).join(' · ');
 
   return (
     <Box
+      onClick={() => navigate(`/todos/${todo.id}`)}
       sx={{
         display: 'flex',
         alignItems: 'center',
         py: 1.5,
         borderBottom: '1px solid',
         borderColor: 'divider',
+        cursor: 'pointer',
         '&:last-of-type': { borderBottom: 'none' },
+        '&:hover': { bgcolor: 'action.hover' },
       }}
     >
       <Checkbox
         checked={todo.completed}
         onChange={() => onToggleComplete(todo.id, !todo.completed)}
+        onClick={(e) => e.stopPropagation()}
         sx={{ p: 0.5, mr: 1.5 }}
       />
 
@@ -73,15 +80,15 @@ export function TodoItem({ todo, onToggleComplete, onDelete, onPriorityChange, s
             {todo.description}
           </Typography>
         )}
-        {(todo.dueDate || frequencyLabel) && (
+        {(todo.dueDate || metaText) && (
           <Typography variant="caption" component="div" sx={{ color: 'text.secondary' }}>
             {dueDate && (
               <Box component="span" sx={{ color: isOverdue ? 'error.main' : 'inherit' }}>
                 Due {dueDate.toLocaleDateString()}
               </Box>
             )}
-            {todo.dueDate && frequencyLabel && ' · '}
-            {frequencyLabel}
+            {todo.dueDate && metaText && ' · '}
+            {metaText}
           </Typography>
         )}
       </Box>
@@ -89,6 +96,7 @@ export function TodoItem({ todo, onToggleComplete, onDelete, onPriorityChange, s
       <Select
         value={todo.priority ?? 'medium'}
         onChange={(e) => onPriorityChange(todo.id, e.target.value)}
+        onClick={(e) => e.stopPropagation()}
         variant="standard"
         disableUnderline
         size="small"
@@ -108,7 +116,10 @@ export function TodoItem({ todo, onToggleComplete, onDelete, onPriorityChange, s
 
       <IconButton
         aria-label="delete"
-        onClick={() => onDelete(todo.id)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete(todo.id);
+        }}
         size="small"
         sx={{ color: 'text.disabled', '&:hover': { color: 'text.secondary' } }}
       >
