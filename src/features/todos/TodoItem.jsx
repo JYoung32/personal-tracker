@@ -5,9 +5,10 @@ import Typography from '@mui/material/Typography';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import { FREQUENCY_OPTIONS, PRIORITY_OPTIONS } from './TodoForm';
+import { FREQUENCY_OPTIONS, PRIORITY_OPTIONS, DAY_OPTIONS } from './TodoForm';
 
 const FREQUENCY_LABELS = Object.fromEntries(FREQUENCY_OPTIONS.map((opt) => [opt.value, opt.label]));
+const DAY_LABELS = Object.fromEntries(DAY_OPTIONS.map((opt) => [opt.value, opt.label]));
 
 const PRIORITY_COLORS = {
   low: 'text.secondary',
@@ -31,7 +32,9 @@ function parseDateOnly(dateStr) {
 export function TodoItem({ todo, onToggleComplete, onDelete, onPriorityChange, showFrequency }) {
   const dueDate = todo.dueDate ? parseDateOnly(todo.dueDate) : null;
   const isOverdue = dueDate && !todo.completed && dueDate < new Date(new Date().toDateString());
-  const frequencyLabel = showFrequency ? FREQUENCY_LABELS[todo.frequency] : null;
+  const frequencyLabel = showFrequency
+    ? [FREQUENCY_LABELS[todo.frequency], DAY_LABELS[todo.recurringDay]].filter(Boolean).join(' · ')
+    : null;
 
   return (
     <Box
