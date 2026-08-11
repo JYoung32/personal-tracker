@@ -6,6 +6,7 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useCollection } from '../../hooks/useCollection';
+import { ConfirmDeleteButton } from '../../components/common/ConfirmDeleteButton';
 import { TodoForm } from './TodoForm';
 
 /**
@@ -67,9 +68,15 @@ export function TaskDetailPage() {
           <TodoForm key={todoId} initialValues={todo} submitLabel="Save changes" onSubmit={handleSave} />
 
           <Box sx={{ textAlign: 'center' }}>
-            <Button color="error" onClick={handleDelete}>
-              Delete task
-            </Button>
+            <ConfirmDeleteButton
+              itemLabel={todo.text}
+              onConfirm={handleDelete}
+              renderTrigger={(open) => (
+                <Button color="error" onClick={open}>
+                  Delete task
+                </Button>
+              )}
+            />
           </Box>
         </>
       )}

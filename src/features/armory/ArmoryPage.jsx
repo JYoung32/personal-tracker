@@ -1,25 +1,23 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import { useCollection } from '../../hooks/useCollection';
 import { ArmoryItemForm } from './ArmoryItemForm';
 import { NavigableRowList } from '../../components/common/NavigableRowList';
-import { CollapsibleAddForm } from '../../components/common/CollapsibleAddForm';
+import { PageHeader } from '../../components/common/PageHeader';
+import { AddFormPanel } from '../../components/common/AddFormPanel';
 
 export function ArmoryPage() {
   const { items, loading, error, addItem, removeItem } = useCollection('armoryItems');
   const navigate = useNavigate();
+  const [showForm, setShowForm] = useState(false);
 
   return (
     <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Box sx={{ mb: 7, textAlign: 'center' }}>
-        <Typography variant="h4" fontWeight={500} align="center" gutterBottom>
-          Armory
-        </Typography>
-      </Box>
+      <PageHeader title="Armory" onAddClick={() => setShowForm(true)} addLabel="Add a firearm" />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -27,7 +25,12 @@ export function ArmoryPage() {
         </Alert>
       )}
 
-      <CollapsibleAddForm addLabel="Add a firearm" onAdd={addItem} FormComponent={ArmoryItemForm} />
+      <AddFormPanel
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        onSubmit={addItem}
+        FormComponent={ArmoryItemForm}
+      />
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>

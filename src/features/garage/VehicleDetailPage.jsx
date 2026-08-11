@@ -11,12 +11,18 @@ import { toggleCompletionFields } from '../../utils/recurrence';
 import { supportsRecurringDay } from '../../constants/taskOptions';
 import { SimpleListSection } from '../../components/common/SimpleListSection';
 import { MaintenanceSection } from '../../components/common/MaintenanceSection';
+import { EditableDetails } from '../../components/common/EditableDetails';
 import { BackLink } from '../../components/common/BackLink';
+import { VehicleForm } from './VehicleForm';
 
 export function VehicleDetailPage() {
   const { vehicleId } = useParams();
   const navigate = useNavigate();
-  const { items: vehicles, loading: vehiclesLoading } = useCollection('garageVehicles');
+  const {
+    items: vehicles,
+    loading: vehiclesLoading,
+    updateItem: updateVehicle,
+  } = useCollection('garageVehicles');
   const {
     items: modifications,
     loading: modificationsLoading,
@@ -102,7 +108,11 @@ export function VehicleDetailPage() {
         </Typography>
       ) : (
         <>
-          <Box sx={{ mb: 5, textAlign: 'center' }}>
+          <EditableDetails
+            FormComponent={VehicleForm}
+            values={vehicle}
+            onSave={(values) => updateVehicle(vehicleId, values)}
+          >
             <Typography variant="h4" fontWeight={500} align="center" gutterBottom>
               {vehicleLabel}
             </Typography>
@@ -111,7 +121,7 @@ export function VehicleDetailPage() {
                 {vehicle.color}
               </Typography>
             )}
-          </Box>
+          </EditableDetails>
 
           <SimpleListSection
             title="Modifications"

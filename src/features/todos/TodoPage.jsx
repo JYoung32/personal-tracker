@@ -7,13 +7,14 @@ import Tab from '@mui/material/Tab';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Divider from '@mui/material/Divider';
-import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import { useCollection } from '../../hooks/useCollection';
 import { useRecurringReset } from '../../hooks/useRecurringReset';
 import { FREQUENCY_OPTIONS } from '../../constants/taskOptions';
 import { toggleCompletionFields } from '../../utils/recurrence';
+import { PageHeader } from '../../components/common/PageHeader';
+import { AddFormPanel } from '../../components/common/AddFormPanel';
 import { TodoForm } from './TodoForm';
 import { TodoList } from './TodoList';
 
@@ -72,21 +73,17 @@ export function TodoPage() {
 
   function handleAddTodo(values) {
     addItem({ ...values, completed: false, completedDate: null });
-    setShowForm(false);
   }
 
   return (
     <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Box sx={{ mb: 7, textAlign: 'center' }}>
-        <Typography variant="h4" fontWeight={500} align="center" gutterBottom>
-          Daily To-Do
-        </Typography>
+      <PageHeader title="Daily To-Do" onAddClick={() => setShowForm(true)} addLabel="Add task">
         {todos.length > 0 && (
           <Typography variant="body2" color="text.secondary" align="center">
             {completedCount} of {todos.length} done
           </Typography>
         )}
-      </Box>
+      </PageHeader>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -94,27 +91,12 @@ export function TodoPage() {
         </Alert>
       )}
 
-      {showForm ? (
-        <>
-          <TodoForm onSubmit={handleAddTodo} />
-          <Box sx={{ textAlign: 'center', mt: -3, mb: 2 }}>
-            <Button size="small" onClick={() => setShowForm(false)} sx={{ color: 'text.secondary' }}>
-              Cancel
-            </Button>
-          </Box>
-        </>
-      ) : (
-        <Box sx={{ textAlign: 'center', mb: 5 }}>
-          <Button
-            variant="outlined"
-            disableElevation
-            onClick={() => setShowForm(true)}
-            sx={{ borderRadius: 2, px: 4 }}
-          >
-            Add Task
-          </Button>
-        </Box>
-      )}
+      <AddFormPanel
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        onSubmit={handleAddTodo}
+        FormComponent={TodoForm}
+      />
 
       <Tabs
         value={filter}

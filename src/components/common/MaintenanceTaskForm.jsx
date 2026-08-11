@@ -14,9 +14,9 @@ import {
 /**
  * Form for adding a maintenance task that's also a real to-do item (see
  * MaintenanceSection usage in VehicleDetailPage / ArmoryItemDetailPage).
- * Calls onAdd({ text, frequency, recurringDay }) and resets itself.
+ * Calls onSubmit({ text, frequency, recurringDay }) and resets itself.
  */
-export function MaintenanceTaskForm({ onAdd }) {
+export function MaintenanceTaskForm({ onSubmit }) {
   const [text, setText] = useState('');
   const [frequency, setFrequency] = useState(DEFAULT_FREQUENCY);
   const [recurringDay, setRecurringDay] = useState('');
@@ -33,7 +33,7 @@ export function MaintenanceTaskForm({ onAdd }) {
     const trimmed = text.trim();
     if (!trimmed) return;
 
-    onAdd({
+    onSubmit({
       text: trimmed,
       frequency,
       recurringDay: showRecurringDay && recurringDay !== '' ? recurringDay : null,

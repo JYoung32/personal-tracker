@@ -7,6 +7,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useCollection } from '../../hooks/useCollection';
 import { SimpleItemForm } from './SimpleItemForm';
 import { BackLink } from './BackLink';
+import { ConfirmDeleteButton } from './ConfirmDeleteButton';
 
 /**
  * Full edit view for a single simple-list item (a modification or wishlist
@@ -50,9 +51,15 @@ export function SimpleItemDetailPage({ id, collectionKey, backTo, backLabel, tit
           <SimpleItemForm key={id} initialValues={item} onSubmit={handleSave} />
 
           <Box sx={{ textAlign: 'center' }}>
-            <Button color="error" onClick={handleDelete}>
-              Delete
-            </Button>
+            <ConfirmDeleteButton
+              itemLabel={item.text}
+              onConfirm={handleDelete}
+              renderTrigger={(open) => (
+                <Button color="error" onClick={open}>
+                  Delete
+                </Button>
+              )}
+            />
           </Box>
         </>
       )}

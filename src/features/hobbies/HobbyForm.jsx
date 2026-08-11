@@ -5,18 +5,20 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 
 /**
- * Form for adding a new hobby. Calls onAdd({ name }) and resets itself.
+ * Form for adding or editing a hobby. Calls onSubmit({ name }). In "add" mode (no
+ * initialValues) it clears itself after submit; pass initialValues (an existing hobby)
+ * to prefill for editing.
  */
-export function HobbyForm({ onAdd }) {
-  const [name, setName] = useState('');
+export function HobbyForm({ initialValues, onSubmit, submitLabel = 'Add' }) {
+  const [name, setName] = useState(initialValues?.name ?? '');
 
   function handleSubmit(e) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
 
-    onAdd({ name: trimmed });
-    setName('');
+    onSubmit({ name: trimmed });
+    if (!initialValues) setName('');
   }
 
   return (
@@ -47,7 +49,7 @@ export function HobbyForm({ onAdd }) {
 
       <Box sx={{ textAlign: 'center', mt: 1 }}>
         <Button type="submit" variant="outlined" disableElevation sx={{ borderRadius: 2, px: 4 }}>
-          Add
+          {submitLabel}
         </Button>
       </Box>
     </Box>

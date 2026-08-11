@@ -3,6 +3,7 @@ import Typography from '@mui/material/Typography';
 import Checkbox from '@mui/material/Checkbox';
 import IconButton from '@mui/material/IconButton';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import { ConfirmDeleteButton } from './ConfirmDeleteButton';
 
 /**
  * A flat checklist: checkbox + label + delete, no navigation. For leaf-level
@@ -46,14 +47,20 @@ export function ChecklistRowList({ items, getLabel, onToggleComplete, onDelete, 
           >
             {getLabel(item)}
           </Typography>
-          <IconButton
-            aria-label="delete"
-            onClick={() => onDelete(item.id)}
-            size="small"
-            sx={{ color: 'text.disabled', '&:hover': { color: 'text.secondary' } }}
-          >
-            <DeleteOutlineIcon fontSize="small" />
-          </IconButton>
+          <ConfirmDeleteButton
+            itemLabel={getLabel(item)}
+            onConfirm={() => onDelete(item.id)}
+            renderTrigger={(open) => (
+              <IconButton
+                aria-label="delete"
+                onClick={open}
+                size="small"
+                sx={{ color: 'text.disabled', '&:hover': { color: 'text.secondary' } }}
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            )}
+          />
         </Box>
       ))}
     </Box>

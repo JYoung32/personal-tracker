@@ -1,14 +1,17 @@
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
+import { useState } from 'react';
+import IconButton from '@mui/material/IconButton';
+import AddIcon from '@mui/icons-material/Add';
 import Alert from '@mui/material/Alert';
 import { MaintenanceTaskForm } from './MaintenanceTaskForm';
 import { MaintenanceTaskList } from './MaintenanceTaskList';
+import { CollapsibleSection } from './CollapsibleSection';
+import { AddFormPanel } from './AddFormPanel';
 
 /**
- * The "Maintenance" sub-section on a vehicle/armory-item detail page.
- * Unlike SimpleListSection, these tasks are real to-do items (see
+ * The collapsible "Maintenance" sub-section on a vehicle/armory-item detail
+ * page. Unlike SimpleListSection, these tasks are real to-do items (see
  * MaintenanceTaskForm), so each also exposes frequency and recurring-day
- * controls.
+ * controls. A "+" icon in the header toggles the add form.
  */
 export function MaintenanceSection({
   title = 'Maintenance',
@@ -21,19 +24,37 @@ export function MaintenanceSection({
   onRecurringDayChange,
   onDelete,
 }) {
-  return (
-    <Box>
-      <Typography variant="h6" fontWeight={500} sx={{ mb: 2 }}>
-        {title}
-      </Typography>
+  const [showForm, setShowForm] = useState(false);
 
+  return (
+    <CollapsibleSection
+      title={title}
+      headerActions={
+        <IconButton
+          size="small"
+          color="primary"
+          aria-label={`Add to ${title}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowForm(true);
+          }}
+        >
+          <AddIcon fontSize="small" />
+        </IconButton>
+      }
+    >
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
 
-      <MaintenanceTaskForm onAdd={onAdd} />
+      <AddFormPanel
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        onSubmit={onAdd}
+        FormComponent={MaintenanceTaskForm}
+      />
 
       <MaintenanceTaskList
         items={items}
@@ -43,6 +64,6 @@ export function MaintenanceSection({
         onDelete={onDelete}
         emptyMessage={emptyMessage}
       />
-    </Box>
+    </CollapsibleSection>
   );
 }

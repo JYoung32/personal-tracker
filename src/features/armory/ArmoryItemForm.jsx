@@ -4,11 +4,19 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 
+const BLANK_VALUES = { make: '', model: '', caliber: '' };
+
 /**
- * Form for adding a new armory item. Calls onAdd({ make, model, caliber }) and resets itself.
+ * Form for adding or editing an armory item. Calls onSubmit({ make, model, caliber }).
+ * In "add" mode (no initialValues) it clears itself after submit; pass initialValues (an
+ * existing item) to prefill for editing.
  */
-export function ArmoryItemForm({ onAdd }) {
-  const [values, setValues] = useState({ make: '', model: '', caliber: '' });
+export function ArmoryItemForm({ initialValues, onSubmit, submitLabel = 'Add' }) {
+  const [values, setValues] = useState({
+    make: initialValues?.make ?? '',
+    model: initialValues?.model ?? '',
+    caliber: initialValues?.caliber ?? '',
+  });
 
   function handleChange(id, value) {
     setValues((prev) => ({ ...prev, [id]: value }));
@@ -20,8 +28,8 @@ export function ArmoryItemForm({ onAdd }) {
     const model = values.model.trim();
     if (!make || !model) return;
 
-    onAdd({ make, model, caliber: values.caliber.trim() || null });
-    setValues({ make: '', model: '', caliber: '' });
+    onSubmit({ make, model, caliber: values.caliber.trim() || null });
+    if (!initialValues) setValues(BLANK_VALUES);
   }
 
   return (
@@ -94,7 +102,7 @@ export function ArmoryItemForm({ onAdd }) {
 
       <Box sx={{ textAlign: 'center', mt: 1 }}>
         <Button type="submit" variant="outlined" disableElevation sx={{ borderRadius: 2, px: 4 }}>
-          Add
+          {submitLabel}
         </Button>
       </Box>
     </Box>

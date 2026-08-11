@@ -1,13 +1,17 @@
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
+import { useState } from 'react';
+import IconButton from '@mui/material/IconButton';
+import AddIcon from '@mui/icons-material/Add';
 import Alert from '@mui/material/Alert';
 import { SingleFieldForm } from './SingleFieldForm';
 import { NavigableRowList } from './NavigableRowList';
+import { CollapsibleSection } from './CollapsibleSection';
+import { AddFormPanel } from './AddFormPanel';
 
 /**
- * A titled "add or remove" sub-section (no checkbox) — e.g. a vehicle's
- * Modifications or Wishlist list. Clicking an item (rather than its delete
- * button) opens its full edit view via onItemClick.
+ * A titled, collapsible "add or remove" sub-section (no checkbox) — e.g. a
+ * vehicle's Modifications or Wishlist list. A "+" icon in the header
+ * toggles the add form; clicking an item (rather than its delete button)
+ * opens its full edit view via onItemClick.
  */
 export function SimpleListSection({
   title,
@@ -19,19 +23,38 @@ export function SimpleListSection({
   onItemClick,
   onDelete,
 }) {
-  return (
-    <Box>
-      <Typography variant="h6" fontWeight={500} sx={{ mb: 2 }}>
-        {title}
-      </Typography>
+  const [showForm, setShowForm] = useState(false);
 
+  return (
+    <CollapsibleSection
+      title={title}
+      headerActions={
+        <IconButton
+          size="small"
+          color="primary"
+          aria-label={`Add to ${title}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowForm(true);
+          }}
+        >
+          <AddIcon fontSize="small" />
+        </IconButton>
+      }
+    >
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
 
-      <SingleFieldForm placeholder={placeholder} onSubmit={onAdd} />
+      <AddFormPanel
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        onSubmit={onAdd}
+        FormComponent={SingleFieldForm}
+        formProps={{ placeholder }}
+      />
 
       <NavigableRowList
         items={items}
@@ -41,6 +64,6 @@ export function SimpleListSection({
         onDelete={onDelete}
         emptyMessage={emptyMessage}
       />
-    </Box>
+    </CollapsibleSection>
   );
 }

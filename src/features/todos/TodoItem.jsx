@@ -7,6 +7,7 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import { FREQUENCY_OPTIONS, PRIORITY_OPTIONS, DAY_OPTIONS } from '../../constants/taskOptions';
+import { ConfirmDeleteButton } from '../../components/common/ConfirmDeleteButton';
 
 const FREQUENCY_LABELS = Object.fromEntries(FREQUENCY_OPTIONS.map((opt) => [opt.value, opt.label]));
 const DAY_LABELS = Object.fromEntries(DAY_OPTIONS.map((opt) => [opt.value, opt.label]));
@@ -114,17 +115,20 @@ export function TodoItem({ todo, onToggleComplete, onDelete, onPriorityChange, s
         ))}
       </Select>
 
-      <IconButton
-        aria-label="delete"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete(todo.id);
-        }}
-        size="small"
-        sx={{ color: 'text.disabled', '&:hover': { color: 'text.secondary' } }}
-      >
-        <DeleteOutlineIcon fontSize="small" />
-      </IconButton>
+      <ConfirmDeleteButton
+        itemLabel={todo.text}
+        onConfirm={() => onDelete(todo.id)}
+        renderTrigger={(open) => (
+          <IconButton
+            aria-label="delete"
+            onClick={open}
+            size="small"
+            sx={{ color: 'text.disabled', '&:hover': { color: 'text.secondary' } }}
+          >
+            <DeleteOutlineIcon fontSize="small" />
+          </IconButton>
+        )}
+      />
     </Box>
   );
 }

@@ -11,11 +11,20 @@ const FIELDS = [
   { id: 'color', label: 'Color' },
 ];
 
+const BLANK_VALUES = { make: '', model: '', trimLevel: '', color: '' };
+
 /**
- * Form for adding a new vehicle. Calls onAdd({ make, model, trimLevel, color }) and resets itself.
+ * Form for adding or editing a vehicle. Calls onSubmit({ make, model, trimLevel, color }).
+ * In "add" mode (no initialValues) it clears itself after submit; pass initialValues (an
+ * existing vehicle) to prefill for editing.
  */
-export function VehicleForm({ onAdd }) {
-  const [values, setValues] = useState({ make: '', model: '', trimLevel: '', color: '' });
+export function VehicleForm({ initialValues, onSubmit, submitLabel = 'Add' }) {
+  const [values, setValues] = useState({
+    make: initialValues?.make ?? '',
+    model: initialValues?.model ?? '',
+    trimLevel: initialValues?.trimLevel ?? '',
+    color: initialValues?.color ?? '',
+  });
 
   function handleChange(id, value) {
     setValues((prev) => ({ ...prev, [id]: value }));
@@ -27,14 +36,14 @@ export function VehicleForm({ onAdd }) {
     const model = values.model.trim();
     if (!make || !model) return;
 
-    onAdd({
+    onSubmit({
       make,
       model,
       trimLevel: values.trimLevel.trim() || null,
       color: values.color.trim() || null,
     });
 
-    setValues({ make: '', model: '', trimLevel: '', color: '' });
+    if (!initialValues) setValues(BLANK_VALUES);
   }
 
   return (
@@ -93,7 +102,7 @@ export function VehicleForm({ onAdd }) {
 
       <Box sx={{ textAlign: 'center', mt: 1 }}>
         <Button type="submit" variant="outlined" disableElevation sx={{ borderRadius: 2, px: 4 }}>
-          Add
+          {submitLabel}
         </Button>
       </Box>
     </Box>

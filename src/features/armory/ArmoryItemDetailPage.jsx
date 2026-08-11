@@ -11,12 +11,14 @@ import { toggleCompletionFields } from '../../utils/recurrence';
 import { supportsRecurringDay } from '../../constants/taskOptions';
 import { SimpleListSection } from '../../components/common/SimpleListSection';
 import { MaintenanceSection } from '../../components/common/MaintenanceSection';
+import { EditableDetails } from '../../components/common/EditableDetails';
 import { BackLink } from '../../components/common/BackLink';
+import { ArmoryItemForm } from './ArmoryItemForm';
 
 export function ArmoryItemDetailPage() {
   const { itemId } = useParams();
   const navigate = useNavigate();
-  const { items, loading: itemsLoading } = useCollection('armoryItems');
+  const { items, loading: itemsLoading, updateItem: updateArmoryItem } = useCollection('armoryItems');
   const {
     items: modifications,
     loading: modificationsLoading,
@@ -100,7 +102,11 @@ export function ArmoryItemDetailPage() {
         </Typography>
       ) : (
         <>
-          <Box sx={{ mb: 5, textAlign: 'center' }}>
+          <EditableDetails
+            FormComponent={ArmoryItemForm}
+            values={item}
+            onSave={(values) => updateArmoryItem(itemId, values)}
+          >
             <Typography variant="h4" fontWeight={500} align="center" gutterBottom>
               {itemLabel}
             </Typography>
@@ -109,7 +115,7 @@ export function ArmoryItemDetailPage() {
                 {item.caliber}
               </Typography>
             )}
-          </Box>
+          </EditableDetails>
 
           <SimpleListSection
             title="Modifications"
