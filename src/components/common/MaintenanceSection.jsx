@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import IconButton from '@mui/material/IconButton';
-import AddIcon from '@mui/icons-material/Add';
+import { useRef, useState } from 'react';
+import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
 import { MaintenanceTaskForm } from './MaintenanceTaskForm';
 import { MaintenanceTaskList } from './MaintenanceTaskList';
 import { CollapsibleSection } from './CollapsibleSection';
 import { AddFormPanel } from './AddFormPanel';
+import { AddToggleActions } from './AddToggleActions';
 
 /**
  * The collapsible "Maintenance" sub-section on a vehicle/armory-item detail
@@ -25,22 +25,22 @@ export function MaintenanceSection({
   onDelete,
 }) {
   const [showForm, setShowForm] = useState(false);
+  const panelRef = useRef(null);
 
   return (
     <CollapsibleSection
       title={title}
       headerActions={
-        <IconButton
-          size="small"
-          color="primary"
-          aria-label={`Add to ${title}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowForm(true);
-          }}
-        >
-          <AddIcon fontSize="small" />
-        </IconButton>
+        <Box onClick={(e) => e.stopPropagation()} sx={{ display: 'flex', alignItems: 'center' }}>
+          <AddToggleActions
+            open={showForm}
+            onOpen={() => setShowForm(true)}
+            onSave={() => panelRef.current?.submit()}
+            onCancel={() => setShowForm(false)}
+            addLabel={`Add to ${title}`}
+            size="small"
+          />
+        </Box>
       }
     >
       {error && (
@@ -50,6 +50,7 @@ export function MaintenanceSection({
       )}
 
       <AddFormPanel
+        ref={panelRef}
         open={showForm}
         onClose={() => setShowForm(false)}
         onSubmit={onAdd}

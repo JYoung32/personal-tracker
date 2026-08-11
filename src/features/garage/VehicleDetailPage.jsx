@@ -22,6 +22,7 @@ export function VehicleDetailPage() {
     items: vehicles,
     loading: vehiclesLoading,
     updateItem: updateVehicle,
+    removeItem: removeVehicle,
   } = useCollection('garageVehicles');
   const {
     items: modifications,
@@ -92,6 +93,11 @@ export function VehicleDetailPage() {
     updateTodo(id, { recurringDay });
   }
 
+  function handleDeleteVehicle() {
+    removeVehicle(vehicleId);
+    navigate('/garage');
+  }
+
   const loading = vehiclesLoading || modificationsLoading || todosLoading || wishlistLoading;
 
   return (
@@ -112,6 +118,8 @@ export function VehicleDetailPage() {
             FormComponent={VehicleForm}
             values={vehicle}
             onSave={(values) => updateVehicle(vehicleId, values)}
+            onDelete={handleDeleteVehicle}
+            deleteLabel={vehicleLabel}
           >
             <Typography variant="h4" fontWeight={500} align="center" gutterBottom>
               {vehicleLabel}

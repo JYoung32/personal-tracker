@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import { FormActions } from '../../components/common/FormActions';
 
 const BLANK_VALUES = { make: '', model: '', caliber: '' };
 
@@ -11,7 +11,7 @@ const BLANK_VALUES = { make: '', model: '', caliber: '' };
  * In "add" mode (no initialValues) it clears itself after submit; pass initialValues (an
  * existing item) to prefill for editing.
  */
-export function ArmoryItemForm({ initialValues, onSubmit, submitLabel = 'Add' }) {
+export function ArmoryItemForm({ initialValues, onSubmit, submitLabel = 'Add', onCancel }) {
   const [values, setValues] = useState({
     make: initialValues?.make ?? '',
     model: initialValues?.model ?? '',
@@ -101,9 +101,7 @@ export function ArmoryItemForm({ initialValues, onSubmit, submitLabel = 'Add' })
       </Box>
 
       <Box sx={{ textAlign: 'center', mt: 1 }}>
-        <Button type="submit" variant="outlined" disableElevation sx={{ borderRadius: 2, px: 4 }}>
-          {submitLabel}
-        </Button>
+        <FormActions submitLabel={submitLabel} onCancel={onCancel} />
       </Box>
     </Box>
   );

@@ -3,8 +3,10 @@ import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
 import CircularProgress from '@mui/material/CircularProgress';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CloseIcon from '@mui/icons-material/Close';
 import { useCollection } from '../../hooks/useCollection';
 import { ConfirmDeleteButton } from '../../components/common/ConfirmDeleteButton';
 import { TodoForm } from './TodoForm';
@@ -54,7 +56,7 @@ export function TaskDetailPage() {
         </Typography>
       ) : (
         <>
-          <Box sx={{ mb: 5, textAlign: 'center' }}>
+          <Box sx={{ mb: 5, position: 'relative', textAlign: 'center' }}>
             <Typography variant="h4" fontWeight={500} align="center" gutterBottom>
               Edit Task
             </Typography>
@@ -63,21 +65,20 @@ export function TaskDetailPage() {
                 {todo.sourceLabel}
               </Typography>
             )}
+            <Box sx={{ position: 'absolute', top: 0, right: 0 }}>
+              <ConfirmDeleteButton
+                itemLabel={todo.text}
+                onConfirm={handleDelete}
+                renderTrigger={(open) => (
+                  <IconButton aria-label="Delete" onClick={open} size="small" color="error">
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                )}
+              />
+            </Box>
           </Box>
 
-          <TodoForm key={todoId} initialValues={todo} submitLabel="Save changes" onSubmit={handleSave} />
-
-          <Box sx={{ textAlign: 'center' }}>
-            <ConfirmDeleteButton
-              itemLabel={todo.text}
-              onConfirm={handleDelete}
-              renderTrigger={(open) => (
-                <Button color="error" onClick={open}>
-                  Delete task
-                </Button>
-              )}
-            />
-          </Box>
+          <TodoForm key={todoId} initialValues={todo} submitLabel="Save" onSubmit={handleSave} />
         </>
       )}
     </Container>

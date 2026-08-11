@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -33,6 +33,7 @@ export function TodoPage() {
   const [filter, setFilter] = useState(FILTERS.ALL);
   const [frequencyFilter, setFrequencyFilter] = useState('all');
   const [showForm, setShowForm] = useState(false);
+  const panelRef = useRef(null);
 
   const filteredTodos = useMemo(() => {
     const sorted = [...todos].sort((a, b) => {
@@ -77,7 +78,14 @@ export function TodoPage() {
 
   return (
     <Container maxWidth="sm" sx={{ py: 8 }}>
-      <PageHeader title="Daily To-Do" onAddClick={() => setShowForm(true)} addLabel="Add task">
+      <PageHeader
+        title="Daily To-Do"
+        isAdding={showForm}
+        onAddClick={() => setShowForm(true)}
+        onSave={() => panelRef.current?.submit()}
+        onCancel={() => setShowForm(false)}
+        addLabel="Add task"
+      >
         {todos.length > 0 && (
           <Typography variant="body2" color="text.secondary" align="center">
             {completedCount} of {todos.length} done
@@ -92,6 +100,7 @@ export function TodoPage() {
       )}
 
       <AddFormPanel
+        ref={panelRef}
         open={showForm}
         onClose={() => setShowForm(false)}
         onSubmit={handleAddTodo}

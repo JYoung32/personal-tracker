@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import { FormActions } from './FormActions';
 
 /**
  * Form for editing a simple list item (a modification or wishlist entry):
  * its name plus a longer optional detail/notes field. Calls
  * onSubmit({ text, detail }). Pass initialValues (an existing item) to
- * prefill for editing.
+ * prefill for editing. Pass onCancel to get a circular X inline next to
+ * the submit button (see FormActions).
  */
-export function SimpleItemForm({ initialValues, onSubmit, submitLabel = 'Save changes' }) {
+export function SimpleItemForm({ initialValues, onSubmit, submitLabel = 'Save', onCancel }) {
   const [text, setText] = useState(initialValues?.text ?? '');
   const [detail, setDetail] = useState(initialValues?.detail ?? '');
 
@@ -48,6 +49,7 @@ export function SimpleItemForm({ initialValues, onSubmit, submitLabel = 'Save ch
           value={text}
           onChange={(e) => setText(e.target.value)}
           fullWidth
+          sx={{ '& .MuiInputBase-input': { textAlign: 'center' } }}
         />
       </Box>
 
@@ -74,9 +76,7 @@ export function SimpleItemForm({ initialValues, onSubmit, submitLabel = 'Save ch
       </Box>
 
       <Box sx={{ textAlign: 'center', mt: 1 }}>
-        <Button type="submit" variant="outlined" disableElevation sx={{ borderRadius: 2, px: 4 }}>
-          {submitLabel}
-        </Button>
+        <FormActions submitLabel={submitLabel} onCancel={onCancel} />
       </Box>
     </Box>
   );

@@ -2,8 +2,9 @@ import { useNavigate } from 'react-router-dom';
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
 import CircularProgress from '@mui/material/CircularProgress';
+import CloseIcon from '@mui/icons-material/Close';
 import { useCollection } from '../../hooks/useCollection';
 import { SimpleItemForm } from './SimpleItemForm';
 import { BackLink } from './BackLink';
@@ -44,23 +45,29 @@ export function SimpleItemDetailPage({ id, collectionKey, backTo, backLabel, tit
         </Typography>
       ) : (
         <>
-          <Typography variant="h4" fontWeight={500} align="center" gutterBottom sx={{ mb: 5 }}>
-            {title}
-          </Typography>
-
-          <SimpleItemForm key={id} initialValues={item} onSubmit={handleSave} />
-
-          <Box sx={{ textAlign: 'center' }}>
-            <ConfirmDeleteButton
-              itemLabel={item.text}
-              onConfirm={handleDelete}
-              renderTrigger={(open) => (
-                <Button color="error" onClick={open}>
-                  Delete
-                </Button>
-              )}
-            />
+          <Box sx={{ position: 'relative', mb: 5 }}>
+            <Typography variant="h4" fontWeight={500} align="center" gutterBottom>
+              {title}
+            </Typography>
+            <Box sx={{ position: 'absolute', top: 0, right: 0 }}>
+              <ConfirmDeleteButton
+                itemLabel={item.text}
+                onConfirm={handleDelete}
+                renderTrigger={(open) => (
+                  <IconButton aria-label="Delete" onClick={open} size="small" color="error">
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                )}
+              />
+            </Box>
           </Box>
+
+          <SimpleItemForm
+            key={id}
+            initialValues={item}
+            onSubmit={handleSave}
+            onCancel={() => navigate(backTo)}
+          />
         </>
       )}
     </Container>

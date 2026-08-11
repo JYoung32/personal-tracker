@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
@@ -14,10 +14,18 @@ export function GaragePage() {
   const { items: vehicles, loading, error, addItem, removeItem } = useCollection('garageVehicles');
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
+  const panelRef = useRef(null);
 
   return (
     <Container maxWidth="sm" sx={{ py: 8 }}>
-      <PageHeader title="Garage" onAddClick={() => setShowForm(true)} addLabel="Add a car" />
+      <PageHeader
+        title="Garage"
+        isAdding={showForm}
+        onAddClick={() => setShowForm(true)}
+        onSave={() => panelRef.current?.submit()}
+        onCancel={() => setShowForm(false)}
+        addLabel="Add a car"
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -26,6 +34,7 @@ export function GaragePage() {
       )}
 
       <AddFormPanel
+        ref={panelRef}
         open={showForm}
         onClose={() => setShowForm(false)}
         onSubmit={addItem}

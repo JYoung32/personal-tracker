@@ -1,17 +1,31 @@
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 
 /**
  * Renders FormComponent (anything that accepts an `onSubmit` callback —
  * the shared { initialValues, onSubmit, submitLabel } convention, or a
- * simpler add-only form like SingleFieldForm/MaintenanceTaskForm) plus a
- * Cancel link when `open`, otherwise nothing. Visibility is controlled
- * externally — see PageHeader/CollapsibleSection's "+" icon, which is what
- * toggles `open` on the pages/sections that use this. `formProps` is
- * spread onto FormComponent for forms that need extra config (e.g.
- * SingleFieldForm's placeholder).
+ * simpler add-only form like SingleFieldForm/MaintenanceTaskForm), passing
+ * it `onCancel` so its own submit button renders a circular X inline next
+ * to it (see FormActions). Visibility is controlled externally — see
+ * PageHeader/CollapsibleSection's "+" icon, which is what toggles `open`
+ * on the pages/sections that use this. `formProps` is spread onto
+ * FormComponent for forms that need extra config (e.g. SingleFieldForm's
+ * placeholder).
+ *
+ * Exposes `submit()` via ref so an external control (the header's
+ * checkmark, via AddToggleActions) can trigger the underlying <form>'s
+ * submit without this component needing to know about that control.
  */
-export function AddFormPanel({ open, onClose, onSubmit, FormComponent, formProps }) {
+export const AddFormPanel = forwardRef(function AddFormPanel(
+  { open, onClose, onSubmit, FormComponent, formProps },
+  ref
+) {
+  const containerRef = useRef(null);
+
+  useImperativeHandle(ref, () => ({
+    submit: () => containerRef.current?.querySelector('form')?.requestSubmit(),
+  }));
+
   if (!open) return null;
 
   function handleSubmit(values) {
@@ -20,13 +34,8 @@ export function AddFormPanel({ open, onClose, onSubmit, FormComponent, formProps
   }
 
   return (
-    <>
-      <FormComponent {...formProps} onSubmit={handleSubmit} />
-      <Box sx={{ textAlign: 'center', mt: -3, mb: 2 }}>
-        <Button size="small" onClick={onClose} sx={{ color: 'text.secondary' }}>
-          Cancel
-        </Button>
-      </Box>
-    </>
+    <Box ref={containerRef}>
+      <FormComponent {...formProps} onSubmit={handleSubmit} onCancel={onClose} />
+    </Box>
   );
-}
+});

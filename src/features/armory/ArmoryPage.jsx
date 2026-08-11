@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
@@ -14,10 +14,18 @@ export function ArmoryPage() {
   const { items, loading, error, addItem, removeItem } = useCollection('armoryItems');
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
+  const panelRef = useRef(null);
 
   return (
     <Container maxWidth="sm" sx={{ py: 8 }}>
-      <PageHeader title="Armory" onAddClick={() => setShowForm(true)} addLabel="Add a firearm" />
+      <PageHeader
+        title="Armory"
+        isAdding={showForm}
+        onAddClick={() => setShowForm(true)}
+        onSave={() => panelRef.current?.submit()}
+        onCancel={() => setShowForm(false)}
+        addLabel="Add a firearm"
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -26,6 +34,7 @@ export function ArmoryPage() {
       )}
 
       <AddFormPanel
+        ref={panelRef}
         open={showForm}
         onClose={() => setShowForm(false)}
         onSubmit={addItem}

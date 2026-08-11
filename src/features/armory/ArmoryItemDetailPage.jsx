@@ -18,7 +18,12 @@ import { ArmoryItemForm } from './ArmoryItemForm';
 export function ArmoryItemDetailPage() {
   const { itemId } = useParams();
   const navigate = useNavigate();
-  const { items, loading: itemsLoading, updateItem: updateArmoryItem } = useCollection('armoryItems');
+  const {
+    items,
+    loading: itemsLoading,
+    updateItem: updateArmoryItem,
+    removeItem: removeArmoryItem,
+  } = useCollection('armoryItems');
   const {
     items: modifications,
     loading: modificationsLoading,
@@ -86,6 +91,11 @@ export function ArmoryItemDetailPage() {
     updateTodo(id, { recurringDay });
   }
 
+  function handleDeleteItem() {
+    removeArmoryItem(itemId);
+    navigate('/armory');
+  }
+
   const loading = itemsLoading || modificationsLoading || todosLoading || wishlistLoading;
 
   return (
@@ -106,6 +116,8 @@ export function ArmoryItemDetailPage() {
             FormComponent={ArmoryItemForm}
             values={item}
             onSave={(values) => updateArmoryItem(itemId, values)}
+            onDelete={handleDeleteItem}
+            deleteLabel={itemLabel}
           >
             <Typography variant="h4" fontWeight={500} align="center" gutterBottom>
               {itemLabel}

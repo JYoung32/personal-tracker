@@ -4,6 +4,8 @@ import TextField from '@mui/material/TextField';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
 import {
   FREQUENCY_OPTIONS,
   DAY_OPTIONS,
@@ -14,9 +16,11 @@ import {
 /**
  * Form for adding a maintenance task that's also a real to-do item (see
  * MaintenanceSection usage in VehicleDetailPage / ArmoryItemDetailPage).
- * Calls onSubmit({ text, frequency, recurringDay }) and resets itself.
+ * Calls onSubmit({ text, frequency, recurringDay }) and resets itself. Pass
+ * onCancel to get a circular X inline next to the Add button (used inside
+ * an AddFormPanel add flow).
  */
-export function MaintenanceTaskForm({ onSubmit }) {
+export function MaintenanceTaskForm({ onSubmit, onCancel }) {
   const [text, setText] = useState('');
   const [frequency, setFrequency] = useState(DEFAULT_FREQUENCY);
   const [recurringDay, setRecurringDay] = useState('');
@@ -69,6 +73,16 @@ export function MaintenanceTaskForm({ onSubmit }) {
         <Button type="submit" variant="outlined" disableElevation sx={{ borderRadius: 2, px: 3 }}>
           Add
         </Button>
+        {onCancel && (
+          <IconButton
+            aria-label="Cancel"
+            onClick={onCancel}
+            size="small"
+            sx={{ border: '1px solid', borderColor: 'divider', color: 'text.secondary' }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        )}
       </Box>
 
       {showRecurringDay && (

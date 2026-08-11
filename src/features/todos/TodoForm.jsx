@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
@@ -13,14 +12,17 @@ import {
   DEFAULT_PRIORITY,
   supportsRecurringDay,
 } from '../../constants/taskOptions';
+import { FormActions } from '../../components/common/FormActions';
 
 /**
  * Form for adding or editing a to-do. Calls onSubmit({ text, description, dueDate, frequency,
  * recurringDay, priority }). In "add" mode (no initialValues) it clears itself after submit.
  * Pass initialValues (an existing todo) to prefill for editing — completed/completedDate aren't
- * part of the form and are left untouched by the caller's merge.
+ * part of the form and are left untouched by the caller's merge. Pass onCancel to get a Cancel
+ * (X) button inline next to the submit button (see FormActions) — used when this form is inside
+ * an AddFormPanel add flow; omitted for standalone edit views like TaskDetailPage.
  */
-export function TodoForm({ initialValues, onSubmit, submitLabel = 'Add' }) {
+export function TodoForm({ initialValues, onSubmit, submitLabel = 'Add', onCancel }) {
   const [text, setText] = useState(initialValues?.text ?? '');
   const [description, setDescription] = useState(initialValues?.description ?? '');
   const [dueDate, setDueDate] = useState(initialValues?.dueDate ?? '');
@@ -215,9 +217,7 @@ export function TodoForm({ initialValues, onSubmit, submitLabel = 'Add' }) {
       )}
 
       <Box sx={{ textAlign: 'center', mt: 3 }}>
-        <Button type="submit" variant="outlined" disableElevation sx={{ borderRadius: 2, px: 4 }}>
-          {submitLabel}
-        </Button>
+        <FormActions submitLabel={submitLabel} onCancel={onCancel} />
       </Box>
     </Box>
   );
