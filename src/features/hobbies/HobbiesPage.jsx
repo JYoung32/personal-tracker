@@ -7,6 +7,7 @@ import Alert from '@mui/material/Alert';
 import { useCollection } from '../../hooks/useCollection';
 import { HobbyForm } from './HobbyForm';
 import { NavigableRowList } from '../../components/common/NavigableRowList';
+import { CollapsibleAddForm } from '../../components/common/CollapsibleAddForm';
 
 export function HobbiesPage() {
   const { items: hobbies, loading, error, addItem, removeItem } = useCollection('hobbies');
@@ -26,7 +27,7 @@ export function HobbiesPage() {
         </Alert>
       )}
 
-      <HobbyForm onAdd={addItem} />
+      <CollapsibleAddForm addLabel="Add a hobby" onAdd={addItem} FormComponent={HobbyForm} />
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>

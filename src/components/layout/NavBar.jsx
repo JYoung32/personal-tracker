@@ -7,13 +7,14 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { GarageNavItem } from './GarageNavItem';
 import { ArmoryNavItem } from './ArmoryNavItem';
+import { UserNavMenu } from './UserNavMenu';
 
 const NAV_LINKS = [
   { label: 'To-Do', path: '/todos' },
   { label: 'Hobbies', path: '/hobbies' },
-  { label: 'Purchase Orders', path: '/purchases' },
-  { label: 'Garage', path: '/garage' },
   { label: 'Armory', path: '/armory' },
+  { label: 'Garage', path: '/garage' },
+  { label: 'Finances', path: '/purchases' },
 ];
 
 export function NavBar() {
@@ -43,12 +44,7 @@ export function NavBar() {
                 </Button>
               );
             })}
-            <Typography variant="body2" sx={{ ml: 2, opacity: 0.8 }}>
-              {user?.username}
-            </Typography>
-            <Button color="inherit" onClick={handleLogout}>
-              Log out
-            </Button>
+            <UserNavMenu username={user?.username} onLogout={handleLogout} />
           </Stack>
         )}
       </Toolbar>

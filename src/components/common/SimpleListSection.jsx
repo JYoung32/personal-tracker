@@ -2,13 +2,23 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import { SingleFieldForm } from './SingleFieldForm';
-import { SimpleRowList } from './SimpleRowList';
+import { NavigableRowList } from './NavigableRowList';
 
 /**
  * A titled "add or remove" sub-section (no checkbox) — e.g. a vehicle's
- * Modifications or Wishlist list.
+ * Modifications or Wishlist list. Clicking an item (rather than its delete
+ * button) opens its full edit view via onItemClick.
  */
-export function SimpleListSection({ title, placeholder, emptyMessage, items, error, onAdd, onDelete }) {
+export function SimpleListSection({
+  title,
+  placeholder,
+  emptyMessage,
+  items,
+  error,
+  onAdd,
+  onItemClick,
+  onDelete,
+}) {
   return (
     <Box>
       <Typography variant="h6" fontWeight={500} sx={{ mb: 2 }}>
@@ -23,7 +33,14 @@ export function SimpleListSection({ title, placeholder, emptyMessage, items, err
 
       <SingleFieldForm placeholder={placeholder} onSubmit={onAdd} />
 
-      <SimpleRowList items={items} getLabel={(item) => item.text} onDelete={onDelete} emptyMessage={emptyMessage} />
+      <NavigableRowList
+        items={items}
+        getLabel={(item) => item.text}
+        getSecondaryLabel={(item) => item.detail}
+        onItemClick={onItemClick}
+        onDelete={onDelete}
+        emptyMessage={emptyMessage}
+      />
     </Box>
   );
 }

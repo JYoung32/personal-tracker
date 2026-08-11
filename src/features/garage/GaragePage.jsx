@@ -7,6 +7,7 @@ import Alert from '@mui/material/Alert';
 import { useCollection } from '../../hooks/useCollection';
 import { VehicleForm } from './VehicleForm';
 import { NavigableRowList } from '../../components/common/NavigableRowList';
+import { CollapsibleAddForm } from '../../components/common/CollapsibleAddForm';
 
 export function GaragePage() {
   const { items: vehicles, loading, error, addItem, removeItem } = useCollection('garageVehicles');
@@ -26,7 +27,7 @@ export function GaragePage() {
         </Alert>
       )}
 
-      <VehicleForm onAdd={addItem} />
+      <CollapsibleAddForm addLabel="Add a Car" onAdd={addItem} FormComponent={VehicleForm} />
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>

@@ -15,7 +15,7 @@ export function PurchasesPage() {
   return (
     <Container maxWidth="sm" sx={{ py: 4 }}>
       <Typography variant="h4" gutterBottom>
-        Purchase Orders
+        Finances
       </Typography>
       <Paper variant="outlined" sx={{ p: 3 }}>
         <Typography color="text.secondary">

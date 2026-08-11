@@ -7,6 +7,7 @@ import Alert from '@mui/material/Alert';
 import { useCollection } from '../../hooks/useCollection';
 import { ArmoryItemForm } from './ArmoryItemForm';
 import { NavigableRowList } from '../../components/common/NavigableRowList';
+import { CollapsibleAddForm } from '../../components/common/CollapsibleAddForm';
 
 export function ArmoryPage() {
   const { items, loading, error, addItem, removeItem } = useCollection('armoryItems');
@@ -26,7 +27,7 @@ export function ArmoryPage() {
         </Alert>
       )}
 
-      <ArmoryItemForm onAdd={addItem} />
+      <CollapsibleAddForm addLabel="Add a firearm" onAdd={addItem} FormComponent={ArmoryItemForm} />
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>

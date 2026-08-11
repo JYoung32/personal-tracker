@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -15,6 +15,7 @@ import { BackLink } from '../../components/common/BackLink';
 
 export function VehicleDetailPage() {
   const { vehicleId } = useParams();
+  const navigate = useNavigate();
   const { items: vehicles, loading: vehiclesLoading } = useCollection('garageVehicles');
   const {
     items: modifications,
@@ -119,6 +120,7 @@ export function VehicleDetailPage() {
             items={vehicleModifications}
             error={modificationsError}
             onAdd={(text) => addModification({ text, vehicleId })}
+            onItemClick={(mod) => navigate(`/garage/${vehicleId}/modifications/${mod.id}`)}
             onDelete={removeModification}
           />
 
@@ -144,6 +146,7 @@ export function VehicleDetailPage() {
             items={vehicleWishlist}
             error={wishlistError}
             onAdd={(text) => addWishlistItem({ text, vehicleId })}
+            onItemClick={(item) => navigate(`/garage/${vehicleId}/wishlist/${item.id}`)}
             onDelete={removeWishlistItem}
           />
         </>

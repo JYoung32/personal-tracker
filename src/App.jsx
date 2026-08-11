@@ -15,8 +15,13 @@ import { HobbyListDetailPage } from './features/hobbies/HobbyListDetailPage';
 import { PurchasesPage } from './features/purchases/PurchasesPage';
 import { GaragePage } from './features/garage/GaragePage';
 import { VehicleDetailPage } from './features/garage/VehicleDetailPage';
+import { GarageModificationDetailPage } from './features/garage/GarageModificationDetailPage';
+import { GarageWishlistDetailPage } from './features/garage/GarageWishlistDetailPage';
 import { ArmoryPage } from './features/armory/ArmoryPage';
 import { ArmoryItemDetailPage } from './features/armory/ArmoryItemDetailPage';
+import { ArmoryModificationDetailPage } from './features/armory/ArmoryModificationDetailPage';
+import { ArmoryWishlistDetailPage } from './features/armory/ArmoryWishlistDetailPage';
+import { ProfilePage } from './features/profile/ProfilePage';
 
 export default function App() {
   return (
@@ -100,6 +105,22 @@ export default function App() {
               }
             />
             <Route
+              path="/garage/:vehicleId/modifications/:modId"
+              element={
+                <ProtectedRoute>
+                  <GarageModificationDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/garage/:vehicleId/wishlist/:wishId"
+              element={
+                <ProtectedRoute>
+                  <GarageWishlistDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/armory"
               element={
                 <ProtectedRoute>
@@ -112,6 +133,30 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <ArmoryItemDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/armory/:itemId/modifications/:modId"
+              element={
+                <ProtectedRoute>
+                  <ArmoryModificationDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/armory/:itemId/wishlist/:wishId"
+              element={
+                <ProtectedRoute>
+                  <ArmoryWishlistDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
                 </ProtectedRoute>
               }
             />

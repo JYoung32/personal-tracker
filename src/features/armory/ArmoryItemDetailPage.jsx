@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -15,6 +15,7 @@ import { BackLink } from '../../components/common/BackLink';
 
 export function ArmoryItemDetailPage() {
   const { itemId } = useParams();
+  const navigate = useNavigate();
   const { items, loading: itemsLoading } = useCollection('armoryItems');
   const {
     items: modifications,
@@ -117,6 +118,7 @@ export function ArmoryItemDetailPage() {
             items={itemModifications}
             error={modificationsError}
             onAdd={(text) => addModification({ text, armoryItemId: itemId })}
+            onItemClick={(mod) => navigate(`/armory/${itemId}/modifications/${mod.id}`)}
             onDelete={removeModification}
           />
 
@@ -142,6 +144,7 @@ export function ArmoryItemDetailPage() {
             items={itemWishlist}
             error={wishlistError}
             onAdd={(text) => addWishlistItem({ text, armoryItemId: itemId })}
+            onItemClick={(item) => navigate(`/armory/${itemId}/wishlist/${item.id}`)}
             onDelete={removeWishlistItem}
           />
         </>

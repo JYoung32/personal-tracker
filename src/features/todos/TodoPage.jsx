@@ -7,6 +7,7 @@ import Tab from '@mui/material/Tab';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Divider from '@mui/material/Divider';
+import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import { useCollection } from '../../hooks/useCollection';
@@ -30,6 +31,7 @@ export function TodoPage() {
   const { items: todos, loading, error, addItem, updateItem, removeItem } = useCollection('todos');
   const [filter, setFilter] = useState(FILTERS.ALL);
   const [frequencyFilter, setFrequencyFilter] = useState('all');
+  const [showForm, setShowForm] = useState(false);
 
   const filteredTodos = useMemo(() => {
     const sorted = [...todos].sort((a, b) => {
@@ -70,6 +72,7 @@ export function TodoPage() {
 
   function handleAddTodo(values) {
     addItem({ ...values, completed: false, completedDate: null });
+    setShowForm(false);
   }
 
   return (
@@ -91,7 +94,27 @@ export function TodoPage() {
         </Alert>
       )}
 
-      <TodoForm onSubmit={handleAddTodo} />
+      {showForm ? (
+        <>
+          <TodoForm onSubmit={handleAddTodo} />
+          <Box sx={{ textAlign: 'center', mt: -3, mb: 2 }}>
+            <Button size="small" onClick={() => setShowForm(false)} sx={{ color: 'text.secondary' }}>
+              Cancel
+            </Button>
+          </Box>
+        </>
+      ) : (
+        <Box sx={{ textAlign: 'center', mb: 5 }}>
+          <Button
+            variant="outlined"
+            disableElevation
+            onClick={() => setShowForm(true)}
+            sx={{ borderRadius: 2, px: 4 }}
+          >
+            Add Task
+          </Button>
+        </Box>
+      )}
 
       <Tabs
         value={filter}
