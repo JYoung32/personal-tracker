@@ -42,8 +42,15 @@ is currently a mock placeholder (see below).
   any specific vehicle.
 - **Armory** — the same structure as Garage (make/model/caliber instead of
   trim/color), including its own page-level Wishlist section.
-- **Finances** — placeholder page (formerly "Purchase Orders"), not yet
-  built out.
+- **Finances** — a tab row: **Owe** (bills/debts — name, description, $
+  owed, optional months left, priority defaulting to Low) and **Wish to
+  Purchase** (name, description, item amount, amount saved — the amount-
+  saved field shows a live "% saved" helper text). The Owe list sorts by
+  priority (not shown in the list itself, only on its edit form) and shows
+  a computed, non-stored "Monthly payment" on the form when both $ owed and
+  months left are set; the list row lets you click the $ owed amount or
+  months-left directly to edit them inline, and totals a "Total" and
+  "Monthly Owed" underneath.
 - **Profile** — username, first name, last name, reached by clicking the
   nav-bar username/icon.
 - **Nav bar** — hover over Garage/Armory for a dropdown of their items;
@@ -90,7 +97,9 @@ src/
                                Maintenance/Modifications/Wishlist),
                                modification/wishlist detail pages
     armory/                   Mirrors garage/ (firearms instead of vehicles)
-    purchases/                PurchasesPage — placeholder ("Finances" tab)
+    purchases/                PurchasesPage ("Finances" tab: Owe + Wish to
+                               Purchase, each its own Section/Form/
+                               ItemDetailPage trio)
     profile/                  ProfilePage
     auth/
       LoginPage.jsx
@@ -119,9 +128,9 @@ src/
   a grey Cancel X inline next to Save.
 - **Related-list tabs**: `RelatedListTabs` renders a row of tabs where only
   the selected tab's content is mounted — used for a vehicle/armory item's
-  Maintenance / Modifications / Wishlist lists and a hobby's user-created
-  lists, so each tab's add-to-list control only shows and works for the
-  list currently selected.
+  Maintenance / Modifications / Wishlist lists, a hobby's user-created
+  lists, and the Finances page's Owe / Wish to Purchase tabs, so each tab's
+  add-to-list control only shows and works for the list currently selected.
 - **`SimpleListSection`/`MaintenanceSection`**: the actual tab content (or,
   with `showHeading`, a standalone section with a visible title — used for
   a hobby's "Hobby Tasks" and Garage/Armory's page-level Wishlist).
@@ -186,10 +195,16 @@ mouse left and immediately re-triggers enter/leave. `GarageNavItem` /
 `ArmoryNavItem` / `UserNavMenu` instead reveal a plain `Paper` that lives in
 the same DOM subtree as the trigger — no portal, no flicker.
 
+**This MUI version (9.x) wants `slotProps`, not `inputProps`/`InputProps`.**
+Passing `inputProps={{ min: 0 }}` straight to a `TextField` throws a "React
+does not recognize the `inputProps` prop" console error here — it leaks
+through to the DOM instead of reaching the native `<input>`. Use
+`slotProps={{ htmlInput: { min: 0 } }}` instead (see `OweItemForm.jsx` /
+`OweItemRow.jsx`). Same idea as the earlier `Menu`
+`MenuListProps` → `slotProps={{ list: {...} }}` fix.
+
 ## Next steps (suggested order)
 
-1. Build out `PurchasesPage` ("Finances") — fields like vendor, price,
-   status, reusing `useCollection('purchases')`.
-2. Swap in Supabase for storage once the data shapes feel settled.
-3. Swap in Supabase Auth (or Clerk) for real login.
-4. Consider a PWA wrapper for a more native-feeling iPhone experience.
+1. Swap in Supabase for storage once the data shapes feel settled.
+2. Swap in Supabase Auth (or Clerk) for real login.
+3. Consider a PWA wrapper for a more native-feeling iPhone experience.

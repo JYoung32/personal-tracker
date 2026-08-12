@@ -13,6 +13,8 @@ import { HobbiesPage } from './features/hobbies/HobbiesPage';
 import { HobbyDetailPage } from './features/hobbies/HobbyDetailPage';
 import { HobbyListEntryDetailPage } from './features/hobbies/HobbyListEntryDetailPage';
 import { PurchasesPage } from './features/purchases/PurchasesPage';
+import { OweItemDetailPage } from './features/purchases/OweItemDetailPage';
+import { WishToPurchaseItemDetailPage } from './features/purchases/WishToPurchaseItemDetailPage';
 import { GaragePage } from './features/garage/GaragePage';
 import { VehicleDetailPage } from './features/garage/VehicleDetailPage';
 import { GarageModificationDetailPage } from './features/garage/GarageModificationDetailPage';
@@ -87,6 +89,22 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <PurchasesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/purchases/owe/:oweId"
+              element={
+                <ProtectedRoute>
+                  <OweItemDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/purchases/wish-to-purchase/:wishId"
+              element={
+                <ProtectedRoute>
+                  <WishToPurchaseItemDetailPage />
                 </ProtectedRoute>
               }
             />
