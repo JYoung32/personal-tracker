@@ -159,13 +159,15 @@ src/
       Shared building blocks reused across features — see below.
 supabase/
   migrations/                 The schema, in order — 001 creates every
-                              table with "allow all" RLS, 002 adds owner-
-                              scoped RLS + the profiles table + its
-                              trigger, 003 adds todos.tags. Every statement
-                              is safe to re-run (Supabase's GitHub
-                              integration replays these against preview
-                              branches cloned from production, which
-                              already has them applied)
+                              table (RLS enabled, no policy — see its own
+                              header for why), 002 adds owner-scoped RLS +
+                              the profiles table + its trigger, 003 adds
+                              todos.tags, 004 is a one-time cleanup for a
+                              data-isolation incident (see its header).
+                              Every statement is safe to re-run (Supabase's
+                              GitHub integration replays these against
+                              preview branches cloned from production,
+                              which already has them applied)
 public/
   404.html                    GitHub Pages SPA-routing redirect (see
                               Deployment)
@@ -238,6 +240,22 @@ the logged-in request, so the app never sends it explicitly) and a
 row-level-security policy restricting all access to `auth.uid() = user_id`.
 That's what actually enforces "separate accounts see separate data" — it
 holds even against direct API calls, not just what the UI happens to show.
+
+**`001_initial_schema.sql` never creates a permissive policy, even
+temporarily — it only ever `DROP`s one.** It used to create an "allow all"
+policy per table for the pre-Auth era, which caused a real incident: Postgres
+OR's multiple *permissive* policies on the same table together, so if 001
+was ever re-run against a database that already had 002's owner-only
+policies applied, "allow all" got silently reinstated alongside them and
+undid the isolation guarantee above — with no error, since both the create
+and the drop-then-create were individually valid SQL. 001 now only enables
+RLS and drops that policy name if found; 002 is what actually grants any
+access at all. Fixed going forward in 001, with 004 as the one-time cleanup
+for a database that already had the stale policy. The lesson generalizes:
+"safe to re-run" isn't the same as "safe regardless of what already ran
+after it" — a migration that recreates a policy/grant needs to consider
+what a *later* migration may have already tightened, not just what an
+*earlier* one left behind.
 
 **Lists share one hook.** Todos, hobbies/hobby lists/list entries, vehicles,
 firearms, modifications, and wishlist items are all just "collections" with
