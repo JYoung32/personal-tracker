@@ -43,6 +43,7 @@ export function ConfirmDeleteButton({ onConfirm, itemLabel = 'this item', render
           paper: {
             sx: {
               width: 350,
+              maxWidth: 'calc(100vw - 32px)',
               height: 200,
               display: 'flex',
               flexDirection: 'column',

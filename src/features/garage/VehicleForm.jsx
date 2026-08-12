@@ -52,7 +52,7 @@ export function VehicleForm({ initialValues, onSubmit, submitLabel = 'Add', onCa
       onSubmit={handleSubmit}
       sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 5 }}
     >
-      <Box sx={{ display: 'flex', gap: 3 }}>
+      <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
         {FIELDS.slice(0, 2).map((field) => (
           <Box key={field.id} sx={{ flex: 1 }}>
             <Typography
@@ -76,7 +76,7 @@ export function VehicleForm({ initialValues, onSubmit, submitLabel = 'Add', onCa
         ))}
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 3 }}>
+      <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
         {FIELDS.slice(2).map((field) => (
           <Box key={field.id} sx={{ flex: 1 }}>
             <Typography

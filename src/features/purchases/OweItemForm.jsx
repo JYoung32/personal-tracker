@@ -100,7 +100,7 @@ export function OweItemForm({ initialValues, onSubmit, submitLabel = 'Add', onCa
         />
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 3 }}>
+      <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
         <Box sx={{ flex: 1 }}>
           <Typography
             variant="caption"

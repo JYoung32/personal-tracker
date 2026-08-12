@@ -67,12 +67,18 @@ already have one).
 - **Profile** — email (read-only), optional username, first name, last
   name, reached by clicking the nav-bar identity. Setting a username makes
   it show in the nav bar instead of your email.
-- **Nav bar** — hover over Garage/Armory for a dropdown of their items;
-  hover the profile icon to reveal Log out.
+- **Nav bar** — at `md` and up: hover over Garage/Armory for a dropdown of
+  their items, hover the profile icon to reveal Log out. Below `md`: a
+  hamburger opens a drawer with plain links instead (hover doesn't work on
+  touch).
 - **Auth** — real Supabase email/password accounts: sign up, log in, and
   "Forgot password?" (emails a reset link). Every row in every collection
   is scoped to the account that created it via Postgres row-level security,
   so separate accounts never see each other's data.
+- **Installable / mobile** — responsive down to a narrow phone (stacked
+  form fields, scrollable tab rows, a drawer nav) and installable as a PWA
+  from either the Android/Chrome install prompt or iOS Safari's Share >
+  "Add to Home Screen" — see [Deployment](#deployment).
 
 ## Project structure
 
@@ -143,6 +149,8 @@ supabase/
 public/
   404.html                    GitHub Pages SPA-routing redirect (see
                               Deployment)
+  pwa-192.png, pwa-512.png,    App icons (rasterized from favicon.svg) for
+  apple-touch-icon.png         the PWA manifest and iOS home screen
 .github/
   workflows/deploy.yml        Builds + deploys to GitHub Pages on push
 ```
@@ -253,6 +261,24 @@ mouse left and immediately re-triggers enter/leave. `GarageNavItem` /
 `ArmoryNavItem` / `UserNavMenu` instead reveal a plain `Paper` that lives in
 the same DOM subtree as the trigger — no portal, no flicker.
 
+**The mobile nav is a second, parallel implementation, not a responsive
+version of the desktop one.** `GarageNavItem`/`ArmoryNavItem`'s hover
+dropdowns fundamentally don't work on touch (no hover event), so `NavBar.jsx`
+renders the existing `Stack` only at `md` and up and an entirely separate
+`Drawer` below it, rather than trying to make one component handle both
+input models. `RelatedListTabs` takes a lighter touch on the same problem:
+past 4 tabs it switches to a scrollable row instead of a centered one, since
+a hobby with several user-created lists could otherwise overflow a phone
+screen.
+
+**The PWA manifest uses relative URLs on purpose.** `start_url: '.'` and
+`scope: '.'` in `vite.config.js`'s `VitePWA` block resolve relative to the
+manifest file's own location rather than the domain root, so they still
+land on `/personal-tracker/` under the GitHub Pages base path without
+hardcoding it. The icons were generated once from `favicon.svg` via a
+throwaway `sharp` script (not a project dependency) — regenerate them the
+same way if the logo ever changes.
+
 **This MUI version (9.x) wants `slotProps`, not `inputProps`/`InputProps`.**
 Passing `inputProps={{ min: 0 }}` straight to a `TextField` throws a "React
 does not recognize the `inputProps` prop" console error here — it leaks
@@ -296,4 +322,8 @@ redirect allow-list for the same reason.
 
 ## Next steps (suggested order)
 
-1. Consider a PWA wrapper for a more native-feeling iPhone experience.
+1. The production bundle is ~780 kB (one chunk, no code-splitting yet) — if
+   load time on mobile networks becomes noticeable, split routes with
+   `React.lazy`/dynamic `import()`.
+2. A true native wrapper (Capacitor) for an actual App Store/Play Store
+   listing, if that's ever wanted over "installs like an app" via the PWA.

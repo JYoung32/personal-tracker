@@ -11,17 +11,26 @@ import Tab from '@mui/material/Tab';
  * away from it. `tabs` is `[{ value, label, content }]`; `defaultValue`
  * picks which one shows first.
  */
+// Above this many tabs, a centered non-scrolling row risks overflowing a
+// narrow phone screen (e.g. a hobby with several user-created lists) — fall
+// back to a scrollable row. Below it, keep the centered look.
+const SCROLLABLE_THRESHOLD = 4;
+
 export function RelatedListTabs({ tabs, defaultValue }) {
   const [value, setValue] = useState(defaultValue ?? tabs[0]?.value);
 
   const active = tabs.find((tab) => tab.value === value);
+  const scrollable = tabs.length > SCROLLABLE_THRESHOLD;
 
   return (
     <Box>
       <Tabs
         value={value}
         onChange={(_, next) => setValue(next)}
-        centered
+        centered={!scrollable}
+        variant={scrollable ? 'scrollable' : 'standard'}
+        scrollButtons={scrollable ? 'auto' : false}
+        allowScrollButtonsMobile
         sx={{ minHeight: 36, mb: 3 }}
         slotProps={{ indicator: { sx: { height: 2 } } }}
       >

@@ -52,13 +52,13 @@ export function MaintenanceTaskForm({ onSubmit, onCancel, defaultFrequency = DEF
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4 }}>
-      <Box sx={{ display: 'flex', gap: 1.5, mb: showRecurringDay ? 1.5 : 0 }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: showRecurringDay ? 1.5 : 0 }}>
         <TextField
           placeholder="Add a maintenance task"
           variant="standard"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          fullWidth
+          sx={{ flex: '1 1 160px' }}
         />
         <Select
           value={frequency}
