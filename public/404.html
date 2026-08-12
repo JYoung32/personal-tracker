@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Personal Tracker</title>
+    <script type="text/javascript">
+      // Single Page Apps for GitHub Pages
+      // https://github.com/rafgraph/spa-github-pages
+      //
+      // GitHub Pages has no server-side routing, so it 404s on a direct
+      // load or refresh of e.g. /personal-tracker/todos. This redirects
+      // that 404 back to index.html with the real path packed into a
+      // query string; index.html's inline script (see below) unpacks it
+      // and hands the real path to react-router via history.replaceState
+      // before the app renders, so the URL ends up correct either way.
+      var pathSegmentsToKeep = 1; // keep "/personal-tracker" as the base
+
+      var l = window.location;
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash
+      );
+    </script>
+  </head>
+  <body></body>
+</html>

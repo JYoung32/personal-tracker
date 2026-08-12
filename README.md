@@ -4,6 +4,9 @@ A personal tracker for daily to-dos, hobbies, a garage, and an armory —
 each with recurring maintenance tasks that also show up on the to-do list.
 React + Vite + MUI, backed by Supabase (Postgres + real email/password Auth).
 
+**Live at <https://jyoung32.github.io/personal-tracker/>**, deployed via
+GitHub Actions on every push to `master` — see [Deployment](#deployment).
+
 ## Getting started
 
 1. Create a Supabase project, then in its SQL Editor run
@@ -137,6 +140,11 @@ supabase/
                               scoped RLS, the profiles table + its trigger
   migrations/                 Incremental changes for a project that
                               already ran an earlier schema.sql
+public/
+  404.html                    GitHub Pages SPA-routing redirect (see
+                              Deployment)
+.github/
+  workflows/deploy.yml        Builds + deploys to GitHub Pages on push
 ```
 
 ### Shared `components/common/` building blocks
@@ -253,9 +261,39 @@ through to the DOM instead of reaching the native `<input>`. Use
 `OweItemRow.jsx`). Same idea as the earlier `Menu`
 `MenuListProps` → `slotProps={{ list: {...} }}` fix.
 
+## Deployment
+
+Hosted on GitHub Pages as a project site
+(`https://jyoung32.github.io/personal-tracker/`), deployed by
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) on every push
+to `master` — build with the `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`
+repo secrets baked in, then published via `actions/deploy-pages`. Repo
+Settings > Pages > Source is set to "GitHub Actions" (not a branch).
+
+Two things this required that a typical Vite SPA doesn't need to think
+about:
+
+- **A path prefix.** GitHub Pages serves a project site under
+  `/<repo-name>/`, not `/`, so `vite.config.js` sets
+  `base: '/personal-tracker/'` — but only for production builds
+  (`command === 'build'`); the dev server stays at `/` so local URLs didn't
+  change.
+- **No server-side routing.** GitHub Pages 404s on a direct load or refresh
+  of a route like `/personal-tracker/todos` — there's no server to fall
+  back to `index.html` the way `npm run dev`'s dev server does.
+  [`public/404.html`](public/404.html) redirects that 404 back to
+  `index.html` with the real path packed into a query string; an inline
+  script at the top of `index.html` unpacks it via
+  `history.replaceState` before react-router (or anything else) sees the
+  URL. (The alternative would've been switching to `HashRouter` — simpler,
+  but `/#/todos`-style URLs; this keeps clean paths instead.)
+
+Because of the path prefix, `AuthContext.jsx`'s password-reset
+`redirectTo` is built from `import.meta.env.BASE_URL` rather than hardcoded,
+so it resolves correctly in both places. Supabase's Authentication > URL
+Configuration has both the GitHub Pages URL and `localhost:5173` in its
+redirect allow-list for the same reason.
+
 ## Next steps (suggested order)
 
 1. Consider a PWA wrapper for a more native-feeling iPhone experience.
-2. If this ever needs to run somewhere public, double check the
-   `redirectTo` URLs and Supabase Auth email templates for production, not
-   just localhost.

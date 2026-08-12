@@ -55,7 +55,9 @@ export function AuthProvider({ children }) {
   // so it can't be used to probe which emails are registered.
   async function requestPasswordReset(email) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      // BASE_URL already has leading/trailing slashes ("/" locally,
+      // "/personal-tracker/" in production) so this works on both.
+      redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}reset-password`,
     });
     if (error) throw error;
   }
