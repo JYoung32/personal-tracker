@@ -3,15 +3,14 @@ import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
 import { SingleFieldForm } from './SingleFieldForm';
 import { NavigableRowList } from './NavigableRowList';
-import { CollapsibleSection } from './CollapsibleSection';
 import { AddFormPanel } from './AddFormPanel';
 import { AddToggleActions } from './AddToggleActions';
 
 /**
- * A titled, collapsible "add or remove" sub-section (no checkbox) — e.g. a
- * vehicle's Modifications or Wishlist list. A "+" icon in the header
- * toggles the add form; clicking an item (rather than its delete button)
- * opens its full edit view via onItemClick.
+ * An "add or remove" list (no checkbox) — e.g. a vehicle's Modifications or
+ * Wishlist list — shown as one tab's content within RelatedListTabs. A "+"
+ * icon toggles the add form; clicking an item (rather than its delete
+ * button) opens its full edit view via onItemClick.
  */
 export function SimpleListSection({
   title,
@@ -27,21 +26,18 @@ export function SimpleListSection({
   const panelRef = useRef(null);
 
   return (
-    <CollapsibleSection
-      title={title}
-      headerActions={
-        <Box onClick={(e) => e.stopPropagation()} sx={{ display: 'flex', alignItems: 'center' }}>
-          <AddToggleActions
-            open={showForm}
-            onOpen={() => setShowForm(true)}
-            onSave={() => panelRef.current?.submit()}
-            onCancel={() => setShowForm(false)}
-            addLabel={`Add to ${title}`}
-            size="small"
-          />
-        </Box>
-      }
-    >
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <AddToggleActions
+          open={showForm}
+          onOpen={() => setShowForm(true)}
+          onSave={() => panelRef.current?.submit()}
+          onCancel={() => setShowForm(false)}
+          addLabel={`Add to ${title}`}
+          size="small"
+        />
+      </Box>
+
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
@@ -65,6 +61,6 @@ export function SimpleListSection({
         onDelete={onDelete}
         emptyMessage={emptyMessage}
       />
-    </CollapsibleSection>
+    </Box>
   );
 }

@@ -7,10 +7,10 @@ import Box from '@mui/material/Box';
  * simpler add-only form like SingleFieldForm/MaintenanceTaskForm), passing
  * it `onCancel` so its own submit button renders a circular X inline next
  * to it (see FormActions). Visibility is controlled externally — see
- * PageHeader/CollapsibleSection's "+" icon, which is what toggles `open`
- * on the pages/sections that use this. `formProps` is spread onto
- * FormComponent for forms that need extra config (e.g. SingleFieldForm's
- * placeholder).
+ * PageHeader/SimpleListSection/MaintenanceSection's "+" icon, which is what
+ * toggles `open` on the pages/sections that use this. `formProps` is
+ * spread onto FormComponent for forms that need extra config (e.g.
+ * SingleFieldForm's placeholder).
  *
  * Exposes `submit()` via ref so an external control (the header's
  * checkmark, via AddToggleActions) can trigger the underlying <form>'s

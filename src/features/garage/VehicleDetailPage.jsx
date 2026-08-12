@@ -4,13 +4,13 @@ import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
-import Divider from '@mui/material/Divider';
 import { useCollection } from '../../hooks/useCollection';
 import { useRecurringReset } from '../../hooks/useRecurringReset';
 import { toggleCompletionFields } from '../../utils/recurrence';
 import { supportsRecurringDay } from '../../constants/taskOptions';
 import { SimpleListSection } from '../../components/common/SimpleListSection';
 import { MaintenanceSection } from '../../components/common/MaintenanceSection';
+import { RelatedListTabs } from '../../components/common/RelatedListTabs';
 import { EditableDetails } from '../../components/common/EditableDetails';
 import { BackLink } from '../../components/common/BackLink';
 import { VehicleForm } from './VehicleForm';
@@ -131,41 +131,58 @@ export function VehicleDetailPage() {
             )}
           </EditableDetails>
 
-          <SimpleListSection
-            title="Modifications"
-            placeholder="Add a modification"
-            emptyMessage="No modifications added yet."
-            items={vehicleModifications}
-            error={modificationsError}
-            onAdd={(text) => addModification({ text, vehicleId })}
-            onItemClick={(mod) => navigate(`/garage/${vehicleId}/modifications/${mod.id}`)}
-            onDelete={removeModification}
-          />
-
-          <Divider sx={{ my: 5 }} />
-
-          <MaintenanceSection
-            emptyMessage="No maintenance tasks added yet."
-            items={vehicleMaintenanceTasks}
-            error={todosError}
-            onAdd={handleAddMaintenanceTask}
-            onToggleComplete={handleToggleMaintenanceComplete}
-            onFrequencyChange={handleMaintenanceFrequencyChange}
-            onRecurringDayChange={handleMaintenanceRecurringDayChange}
-            onDelete={removeTodo}
-          />
-
-          <Divider sx={{ my: 5 }} />
-
-          <SimpleListSection
-            title="Wishlist"
-            placeholder="Add a wishlist item"
-            emptyMessage="Nothing on the wishlist yet."
-            items={vehicleWishlist}
-            error={wishlistError}
-            onAdd={(text) => addWishlistItem({ text, vehicleId })}
-            onItemClick={(item) => navigate(`/garage/${vehicleId}/wishlist/${item.id}`)}
-            onDelete={removeWishlistItem}
+          <RelatedListTabs
+            defaultValue="maintenance"
+            tabs={[
+              {
+                value: 'maintenance',
+                label: 'Maintenance',
+                content: (
+                  <MaintenanceSection
+                    emptyMessage="No maintenance tasks added yet."
+                    items={vehicleMaintenanceTasks}
+                    error={todosError}
+                    onAdd={handleAddMaintenanceTask}
+                    onToggleComplete={handleToggleMaintenanceComplete}
+                    onFrequencyChange={handleMaintenanceFrequencyChange}
+                    onRecurringDayChange={handleMaintenanceRecurringDayChange}
+                    onDelete={removeTodo}
+                  />
+                ),
+              },
+              {
+                value: 'modifications',
+                label: 'Modifications',
+                content: (
+                  <SimpleListSection
+                    title="Modifications"
+                    placeholder="Add a modification"
+                    emptyMessage="No modifications added yet."
+                    items={vehicleModifications}
+                    error={modificationsError}
+                    onAdd={(text) => addModification({ text, vehicleId })}
+                    onItemClick={(mod) => navigate(`/garage/${vehicleId}/modifications/${mod.id}`)}
+                    onDelete={removeModification}
+                  />
+                ),
+              },
+              {
+                value: 'wishlist',
+                label: 'Wishlist',
+                content: (
+                  <SimpleListSection
+                    title="Wishlist"
+                    placeholder="Add a wishlist item"
+                    emptyMessage="Nothing on the wishlist yet."
+                    items={vehicleWishlist}
+                    error={wishlistError}
+                    onAdd={(text) => addWishlistItem({ text, vehicleId })}
+                    onItemClick={(item) => navigate(`/garage/${vehicleId}/wishlist/${item.id}`)}
+                    onDelete={removeWishlistItem}
+                  />
+                ),
+              },
+            ]}
           />
         </>
       )}

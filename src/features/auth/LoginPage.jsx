@@ -16,7 +16,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const redirectTo = location.state?.from?.pathname || '/todos';
+  const redirectTo = location.state?.from?.pathname || '/overview';
 
   async function handleSubmit(e) {
     e.preventDefault();

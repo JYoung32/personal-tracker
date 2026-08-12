@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext';
 import { NavBar } from './components/layout/NavBar';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { LoginPage } from './features/auth/LoginPage';
+import { OverviewPage } from './features/overview/OverviewPage';
 import { TodoPage } from './features/todos/TodoPage';
 import { TaskDetailPage } from './features/todos/TaskDetailPage';
 import { HobbiesPage } from './features/hobbies/HobbiesPage';
@@ -32,6 +33,14 @@ export default function App() {
           <NavBar />
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/overview"
+              element={
+                <ProtectedRoute>
+                  <OverviewPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/todos"
               element={
@@ -160,8 +169,8 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/" element={<Navigate to="/todos" replace />} />
-            <Route path="*" element={<Navigate to="/todos" replace />} />
+            <Route path="/" element={<Navigate to="/overview" replace />} />
+            <Route path="*" element={<Navigate to="/overview" replace />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>

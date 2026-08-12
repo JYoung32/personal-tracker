@@ -3,15 +3,14 @@ import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
 import { MaintenanceTaskForm } from './MaintenanceTaskForm';
 import { MaintenanceTaskList } from './MaintenanceTaskList';
-import { CollapsibleSection } from './CollapsibleSection';
 import { AddFormPanel } from './AddFormPanel';
 import { AddToggleActions } from './AddToggleActions';
 
 /**
- * The collapsible "Maintenance" sub-section on a vehicle/armory-item detail
- * page. Unlike SimpleListSection, these tasks are real to-do items (see
- * MaintenanceTaskForm), so each also exposes frequency and recurring-day
- * controls. A "+" icon in the header toggles the add form.
+ * The "Maintenance" list — shown as one tab's content within
+ * RelatedListTabs. Unlike SimpleListSection, these tasks are real to-do
+ * items (see MaintenanceTaskForm), so each also exposes frequency and
+ * recurring-day controls. A "+" icon toggles the add form.
  */
 export function MaintenanceSection({
   title = 'Maintenance',
@@ -28,21 +27,18 @@ export function MaintenanceSection({
   const panelRef = useRef(null);
 
   return (
-    <CollapsibleSection
-      title={title}
-      headerActions={
-        <Box onClick={(e) => e.stopPropagation()} sx={{ display: 'flex', alignItems: 'center' }}>
-          <AddToggleActions
-            open={showForm}
-            onOpen={() => setShowForm(true)}
-            onSave={() => panelRef.current?.submit()}
-            onCancel={() => setShowForm(false)}
-            addLabel={`Add to ${title}`}
-            size="small"
-          />
-        </Box>
-      }
-    >
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <AddToggleActions
+          open={showForm}
+          onOpen={() => setShowForm(true)}
+          onSave={() => panelRef.current?.submit()}
+          onCancel={() => setShowForm(false)}
+          addLabel={`Add to ${title}`}
+          size="small"
+        />
+      </Box>
+
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
@@ -65,6 +61,6 @@ export function MaintenanceSection({
         onDelete={onDelete}
         emptyMessage={emptyMessage}
       />
-    </CollapsibleSection>
+    </Box>
   );
 }

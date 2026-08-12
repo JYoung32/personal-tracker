@@ -4,13 +4,13 @@ import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
-import Divider from '@mui/material/Divider';
 import { useCollection } from '../../hooks/useCollection';
 import { useRecurringReset } from '../../hooks/useRecurringReset';
 import { toggleCompletionFields } from '../../utils/recurrence';
 import { supportsRecurringDay } from '../../constants/taskOptions';
 import { SimpleListSection } from '../../components/common/SimpleListSection';
 import { MaintenanceSection } from '../../components/common/MaintenanceSection';
+import { RelatedListTabs } from '../../components/common/RelatedListTabs';
 import { EditableDetails } from '../../components/common/EditableDetails';
 import { BackLink } from '../../components/common/BackLink';
 import { ArmoryItemForm } from './ArmoryItemForm';
@@ -129,41 +129,58 @@ export function ArmoryItemDetailPage() {
             )}
           </EditableDetails>
 
-          <SimpleListSection
-            title="Modifications"
-            placeholder="Add a modification"
-            emptyMessage="No modifications added yet."
-            items={itemModifications}
-            error={modificationsError}
-            onAdd={(text) => addModification({ text, armoryItemId: itemId })}
-            onItemClick={(mod) => navigate(`/armory/${itemId}/modifications/${mod.id}`)}
-            onDelete={removeModification}
-          />
-
-          <Divider sx={{ my: 5 }} />
-
-          <MaintenanceSection
-            emptyMessage="No maintenance tasks added yet."
-            items={itemMaintenanceTasks}
-            error={todosError}
-            onAdd={handleAddMaintenanceTask}
-            onToggleComplete={handleToggleMaintenanceComplete}
-            onFrequencyChange={handleMaintenanceFrequencyChange}
-            onRecurringDayChange={handleMaintenanceRecurringDayChange}
-            onDelete={removeTodo}
-          />
-
-          <Divider sx={{ my: 5 }} />
-
-          <SimpleListSection
-            title="Wishlist"
-            placeholder="Add a wishlist item"
-            emptyMessage="Nothing on the wishlist yet."
-            items={itemWishlist}
-            error={wishlistError}
-            onAdd={(text) => addWishlistItem({ text, armoryItemId: itemId })}
-            onItemClick={(item) => navigate(`/armory/${itemId}/wishlist/${item.id}`)}
-            onDelete={removeWishlistItem}
+          <RelatedListTabs
+            defaultValue="maintenance"
+            tabs={[
+              {
+                value: 'maintenance',
+                label: 'Maintenance',
+                content: (
+                  <MaintenanceSection
+                    emptyMessage="No maintenance tasks added yet."
+                    items={itemMaintenanceTasks}
+                    error={todosError}
+                    onAdd={handleAddMaintenanceTask}
+                    onToggleComplete={handleToggleMaintenanceComplete}
+                    onFrequencyChange={handleMaintenanceFrequencyChange}
+                    onRecurringDayChange={handleMaintenanceRecurringDayChange}
+                    onDelete={removeTodo}
+                  />
+                ),
+              },
+              {
+                value: 'modifications',
+                label: 'Modifications',
+                content: (
+                  <SimpleListSection
+                    title="Modifications"
+                    placeholder="Add a modification"
+                    emptyMessage="No modifications added yet."
+                    items={itemModifications}
+                    error={modificationsError}
+                    onAdd={(text) => addModification({ text, armoryItemId: itemId })}
+                    onItemClick={(mod) => navigate(`/armory/${itemId}/modifications/${mod.id}`)}
+                    onDelete={removeModification}
+                  />
+                ),
+              },
+              {
+                value: 'wishlist',
+                label: 'Wishlist',
+                content: (
+                  <SimpleListSection
+                    title="Wishlist"
+                    placeholder="Add a wishlist item"
+                    emptyMessage="Nothing on the wishlist yet."
+                    items={itemWishlist}
+                    error={wishlistError}
+                    onAdd={(text) => addWishlistItem({ text, armoryItemId: itemId })}
+                    onItemClick={(item) => navigate(`/armory/${itemId}/wishlist/${item.id}`)}
+                    onDelete={removeWishlistItem}
+                  />
+                ),
+              },
+            ]}
           />
         </>
       )}
