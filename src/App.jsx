@@ -6,6 +6,9 @@ import { AuthProvider } from './context/AuthContext';
 import { NavBar } from './components/layout/NavBar';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { LoginPage } from './features/auth/LoginPage';
+import { SignupPage } from './features/auth/SignupPage';
+import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
+import { ResetPasswordPage } from './features/auth/ResetPasswordPage';
 import { OverviewPage } from './features/overview/OverviewPage';
 import { TodoPage } from './features/todos/TodoPage';
 import { TaskDetailPage } from './features/todos/TaskDetailPage';
@@ -36,6 +39,9 @@ export default function App() {
           <NavBar />
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route
               path="/overview"
               element={

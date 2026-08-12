@@ -35,7 +35,22 @@ export function ConfirmDeleteButton({ onConfirm, itemLabel = 'this item', render
   return (
     <>
       {renderTrigger(handleOpen)}
-      <Dialog open={open} onClose={handleClose} onClick={(e) => e.stopPropagation()}>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        onClick={(e) => e.stopPropagation()}
+        slotProps={{
+          paper: {
+            sx: {
+              width: 350,
+              height: 200,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            },
+          },
+        }}
+      >
         <DialogTitle>Delete {itemLabel}?</DialogTitle>
         <DialogContent>
           <DialogContentText>This can&apos;t be undone.</DialogContentText>

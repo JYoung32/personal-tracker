@@ -1,22 +1,14 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { supabase } from '../services/supabase/client';
 
 /**
- * AuthContext (MOCK)
- * -------------------
- * This is throwaway scaffolding, clearly marked so it's easy to find and
- * rip out later. It does NOT provide real security — anyone can open dev
- * tools and flip the "authed" flag in localStorage. It exists purely so
- * the app has a login screen and protected routes while the rest of the
- * app is being built.
- *
- * SWAP-OUT PLAN: when ready, replace the body of `login`/`logout`/the
- * `useEffect` below with calls to Supabase Auth (supabase.auth.signInWithPassword,
- * supabase.auth.signOut, supabase.auth.getSession). The `user` / `isAuthenticated`
- * shape consumed by the rest of the app can stay the same, so components
- * like ProtectedRoute and NavBar won't need to change.
+ * AuthContext
+ * ------------
+ * Real Supabase Auth (email/password). On mount, restores whatever session
+ * Supabase already has persisted (its client keeps its own localStorage
+ * key), then stays in sync via onAuthStateChange for sign-in/out and token
+ * refresh. `user` is Supabase's user object (id, email, ...) or null.
  */
-
-const AUTH_STORAGE_KEY = 'personal-tracker:mock-auth';
 
 const AuthContext = createContext(null);
 
@@ -24,38 +16,55 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [initializing, setInitializing] = useState(true);
 
-  // On load, check if a mock session already exists.
   useEffect(() => {
-    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (stored) {
-      setUser(JSON.parse(stored));
-    }
-    setInitializing(false);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setInitializing(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // MOCK LOGIN: accepts any non-empty username/password.
-  // Replace with Supabase Auth call when ready.
-  async function login(username, password) {
-    if (!username || !password) {
-      throw new Error('Username and password are required');
-    }
-    const mockUser = { username };
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(mockUser));
-    setUser(mockUser);
-    return mockUser;
+  async function login(email, password) {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
   }
 
-  function logout() {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    setUser(null);
+  // Returns { needsEmailConfirmation }: Supabase projects default to
+  // requiring email confirmation, in which case signUp doesn't return a
+  // session yet — the caller should tell the user to check their inbox
+  // instead of navigating them straight in.
+  async function signup(email, password) {
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) throw error;
+    return { needsEmailConfirmation: !data.session };
   }
 
-  function updateUsername(username) {
-    setUser((prev) => {
-      const next = { ...prev, username };
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(next));
-      return next;
+  async function logout() {
+    await supabase.auth.signOut();
+  }
+
+  // Emails a reset link pointing at /reset-password. Supabase always
+  // resolves this without error, whether or not the email has an account,
+  // so it can't be used to probe which emails are registered.
+  async function requestPasswordReset(email) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
     });
+    if (error) throw error;
+  }
+
+  // Only works while the recovery session from the emailed link is active
+  // (ResetPasswordPage) — otherwise Supabase rejects it.
+  async function updatePassword(password) {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
   }
 
   const value = {
@@ -63,8 +72,10 @@ export function AuthProvider({ children }) {
     isAuthenticated: Boolean(user),
     initializing,
     login,
+    signup,
     logout,
-    updateUsername,
+    requestPasswordReset,
+    updatePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

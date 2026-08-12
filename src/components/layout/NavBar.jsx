@@ -5,6 +5,7 @@ import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useProfile } from '../../hooks/useProfile';
 import { GarageNavItem } from './GarageNavItem';
 import { ArmoryNavItem } from './ArmoryNavItem';
 import { UserNavMenu } from './UserNavMenu';
@@ -19,6 +20,7 @@ const NAV_LINKS = [
 
 export function NavBar() {
   const { isAuthenticated, logout, user } = useAuth();
+  const { profile } = useProfile();
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -44,7 +46,7 @@ export function NavBar() {
                 </Button>
               );
             })}
-            <UserNavMenu username={user?.username} onLogout={handleLogout} />
+            <UserNavMenu username={profile.username || user?.email} onLogout={handleLogout} />
           </Stack>
         )}
       </Toolbar>

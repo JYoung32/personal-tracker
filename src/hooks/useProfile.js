@@ -1,29 +1,59 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../services/supabase/client';
+import { useAuth } from '../context/AuthContext';
 
-const PROFILE_STORAGE_KEY = 'personal-tracker:profile';
+const BLANK_PROFILE = { username: '', firstName: '', lastName: '' };
 
-function readProfile() {
-  const stored = localStorage.getItem(PROFILE_STORAGE_KEY);
-  return stored ? JSON.parse(stored) : { firstName: '', lastName: '' };
+function rowToProfile(row) {
+  return {
+    username: row?.username ?? '',
+    firstName: row?.first_name ?? '',
+    lastName: row?.last_name ?? '',
+  };
 }
 
 /**
- * The user's profile is a single object (not a list), so it doesn't fit the
- * useCollection pattern — this reads/writes it directly under its own
- * localStorage key. localStorage access is synchronous, so unlike
- * useCollection there's no artificial loading state to model a future
- * async backend.
+ * The user's profile — username, first/last name — one row per auth user
+ * in the `profiles` table (auto-created on signup, see supabase/schema.sql).
+ * Unlike useCollection this isn't a list, so it manages its own single-row
+ * fetch/update against Supabase directly.
  */
 export function useProfile() {
-  const [profile, setProfile] = useState(readProfile);
+  const { user } = useAuth();
+  const [profile, setProfile] = useState(BLANK_PROFILE);
+  const [loading, setLoading] = useState(true);
 
-  function updateProfile(updates) {
-    setProfile((prev) => {
-      const next = { ...prev, ...updates };
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+  const refresh = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('username, first_name, last_name')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (!error) setProfile(rowToProfile(data));
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  async function updateProfile(updates) {
+    const row = {};
+    if ('username' in updates) row.username = updates.username;
+    if ('firstName' in updates) row.first_name = updates.firstName;
+    if ('lastName' in updates) row.last_name = updates.lastName;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(row)
+      .eq('user_id', user.id)
+      .select('username, first_name, last_name')
+      .single();
+    if (error) throw error;
+    setProfile(rowToProfile(data));
   }
 
-  return { profile, updateProfile };
+  return { profile, loading, updateProfile };
 }

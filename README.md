@@ -2,17 +2,27 @@
 
 A personal tracker for daily to-dos, hobbies, a garage, and an armory —
 each with recurring maintenance tasks that also show up on the to-do list.
-React + Vite + MUI, localStorage-backed for now.
+React + Vite + MUI, backed by Supabase (Postgres + real email/password Auth).
 
 ## Getting started
+
+1. Create a Supabase project, then in its SQL Editor run
+   [`supabase/schema.sql`](supabase/schema.sql) (fresh project) — or, if
+   tables already exist, apply anything new under
+   [`supabase/migrations/`](supabase/migrations) in order.
+2. Copy `.env.example` to `.env.local` and fill in your project's URL and
+   anon key (Project Settings > API in the Supabase dashboard).
+3. In the Supabase dashboard under Authentication > URL Configuration, add
+   your dev URL's `/reset-password` (e.g. `http://localhost:5173/reset-password`)
+   to the allowed redirect URLs — needed for the "Forgot password?" flow.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the printed localhost URL. Log in with **any** username/password — auth
-is currently a mock placeholder (see below).
+Open the printed localhost URL and sign up for an account (or log in if you
+already have one).
 
 ## Features
 
@@ -51,10 +61,15 @@ is currently a mock placeholder (see below).
   months left are set; the list row lets you click the $ owed amount or
   months-left directly to edit them inline, and totals a "Total" and
   "Monthly Owed" underneath.
-- **Profile** — username, first name, last name, reached by clicking the
-  nav-bar username/icon.
+- **Profile** — email (read-only), optional username, first name, last
+  name, reached by clicking the nav-bar identity. Setting a username makes
+  it show in the nav bar instead of your email.
 - **Nav bar** — hover over Garage/Armory for a dropdown of their items;
   hover the profile icon to reveal Log out.
+- **Auth** — real Supabase email/password accounts: sign up, log in, and
+  "Forgot password?" (emails a reset link). Every row in every collection
+  is scoped to the account that created it via Postgres row-level security,
+  so separate accounts never see each other's data.
 
 ## Project structure
 
@@ -63,20 +78,27 @@ src/
   App.jsx                  Routes + top-level providers
   theme.js                 MUI theme (colors, shape) — edit freely
   context/
-    AuthContext.jsx         MOCK auth (any credentials work). Swap-out plan
-                             documented in the file itself.
+    AuthContext.jsx         Real Supabase Auth — login/signup/logout plus
+                             password reset, session restore + live sync
+                             via onAuthStateChange.
   services/
+    supabase/
+      client.js               The Supabase client, built from
+                                VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY
     storage/
-      localStorageAdapter.js  Actual localStorage read/write logic
+      localStorageAdapter.js  Old localStorage read/write logic — unused
+                                now but kept as a reference/fallback
+      supabaseAdapter.js       ACTIVE adapter — talks to Postgres, converts
+                                camelCase <-> snake_case generically
       index.js                 Exports the ACTIVE adapter — change this one
-                                file to switch to Supabase later
+                                file to switch storage backends
   hooks/
     useCollection.js         Generic CRUD hook (loading/add/update/remove)
                               used by every list-based feature
     useRecurringReset.js     Auto-uncheck recurring todos/maintenance tasks
                               on their scheduled reset date
-    useProfile.js             Synchronous localStorage read/write for the
-                              singleton profile record
+    useProfile.js             Reads/writes the `profiles` table (username,
+                              first/last name) for the logged-in user
   constants/
     taskOptions.js            Frequency/priority/day-of-week option lists
     hobbyListTypes.js          The 4 hobby list types (Maintenance/
@@ -102,13 +124,19 @@ src/
                                ItemDetailPage trio)
     profile/                  ProfilePage
     auth/
-      LoginPage.jsx
+      LoginPage.jsx, SignupPage.jsx, ForgotPasswordPage.jsx,
+      ResetPasswordPage.jsx
   components/
     layout/
       NavBar.jsx, ProtectedRoute.jsx, NavDropdownItem.jsx,
       GarageNavItem.jsx, ArmoryNavItem.jsx, UserNavMenu.jsx
     common/
       Shared building blocks reused across features — see below.
+supabase/
+  schema.sql                 Fresh-install reference: every table, owner-
+                              scoped RLS, the profiles table + its trigger
+  migrations/                 Incremental changes for a project that
+                              already ran an earlier schema.sql
 ```
 
 ### Shared `components/common/` building blocks
@@ -153,15 +181,27 @@ src/
 ## Why it's built this way (for future-you)
 
 **Storage is abstracted behind an adapter.** Nothing in `features/` talks to
-`localStorage` directly — it all goes through `services/storage/index.js`,
-which currently points at `localStorageAdapter.js`. When you're ready to add
-Supabase:
+Supabase (or localStorage) directly — it all goes through
+`services/storage/index.js`, which currently points at `supabaseAdapter.js`.
+Swapping backends again is still just changing that one export, as long as
+the new adapter implements the same four methods: `getAll(key)`,
+`create(key, item)`, `update(key, id, updates)`, `remove(key, id)`.
 
-1. Create `services/storage/supabaseAdapter.js` implementing the same four
-   methods: `getAll(key)`, `create(key, item)`, `update(key, id, updates)`,
-   `remove(key, id)`.
-2. Change the one-line export in `services/storage/index.js`.
-3. Nothing else changes.
+**One collection key = one table, no manual mapping.** Every feature's
+collection key is camelCase (`garageVehicles`, `oweItems`, ...); every
+Postgres table/column is snake_case (`garage_vehicles`, `owe_items`,
+`trim_level`, ...). `supabaseAdapter.js` converts both directions
+generically (`toSnakeCase`/`toCamelCase` on every object key, and on the
+collection key itself to get the table name), so a brand new collection
+only ever needs a matching table in `supabase/schema.sql` — never a code
+change in the adapter.
+
+**Every row is owned by the account that created it.** Each table has a
+`user_id` column defaulting to `auth.uid()` (filled in automatically from
+the logged-in request, so the app never sends it explicitly) and a
+row-level-security policy restricting all access to `auth.uid() = user_id`.
+That's what actually enforces "separate accounts see separate data" — it
+holds even against direct API calls, not just what the UI happens to show.
 
 **Lists share one hook.** Todos, hobbies/hobby lists/list entries, vehicles,
 firearms, modifications, and wishlist items are all just "collections" with
@@ -184,9 +224,19 @@ tasks follow the same tagging idea with `vehicleId`/`armoryItemId` (there's
 only ever one Maintenance list per vehicle/firearm, so no extra list-id tag
 is needed there).
 
-**Auth is a clearly-marked placeholder.** `AuthContext.jsx` accepts any
-non-empty username/password and just gates routes via `ProtectedRoute`. It's
-commented with the exact swap-out plan for Supabase Auth when you get there.
+**Auth is real Supabase Auth (email/password).** `AuthContext.jsx` restores
+whatever session Supabase already persisted on load, then stays in sync via
+`onAuthStateChange` (covers sign-in/out, token refresh, and the recovery
+session created when a "Forgot password?" link is clicked).
+`ProtectedRoute` just checks `isAuthenticated`, unchanged from before the
+swap. New accounts get a blank `profiles` row automatically via a Postgres
+trigger (`handle_new_user`, see `supabase/schema.sql`) — the app never has
+to create it.
+
+**Username is optional and separate from the login identity.** Supabase
+Auth's identity is always the email; `profiles.username` is just a display
+name the nav bar prefers when set (`profile.username || user?.email`), with
+a unique constraint at the database level so two accounts can't collide.
 
 **Nav-bar hover dropdowns use plain CSS `:hover`, not MUI `Menu`.** An
 earlier attempt with `Menu` flickered because its modal overlay renders on
@@ -205,6 +255,7 @@ through to the DOM instead of reaching the native `<input>`. Use
 
 ## Next steps (suggested order)
 
-1. Swap in Supabase for storage once the data shapes feel settled.
-2. Swap in Supabase Auth (or Clerk) for real login.
-3. Consider a PWA wrapper for a more native-feeling iPhone experience.
+1. Consider a PWA wrapper for a more native-feeling iPhone experience.
+2. If this ever needs to run somewhere public, double check the
+   `redirectTo` URLs and Supabase Auth email templates for production, not
+   just localhost.
