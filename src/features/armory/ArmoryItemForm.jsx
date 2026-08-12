@@ -7,8 +7,9 @@ import { FormActions } from '../../components/common/FormActions';
 const BLANK_VALUES = { make: '', model: '', caliber: '' };
 
 /**
- * Form for adding or editing an armory item. Calls onSubmit({ make, model, caliber }).
- * In "add" mode (no initialValues) it clears itself after submit; pass initialValues (an
+ * Form for adding or editing an armory item. Calls
+ * onSubmit({ make, model, caliber, notes }). In "add" mode (no
+ * initialValues) it clears itself after submit; pass initialValues (an
  * existing item) to prefill for editing.
  */
 export function ArmoryItemForm({ initialValues, onSubmit, submitLabel = 'Add', onCancel }) {
@@ -17,6 +18,7 @@ export function ArmoryItemForm({ initialValues, onSubmit, submitLabel = 'Add', o
     model: initialValues?.model ?? '',
     caliber: initialValues?.caliber ?? '',
   });
+  const [notes, setNotes] = useState(initialValues?.notes ?? '');
 
   function handleChange(id, value) {
     setValues((prev) => ({ ...prev, [id]: value }));
@@ -28,8 +30,11 @@ export function ArmoryItemForm({ initialValues, onSubmit, submitLabel = 'Add', o
     const model = values.model.trim();
     if (!make || !model) return;
 
-    onSubmit({ make, model, caliber: values.caliber.trim() || null });
-    if (!initialValues) setValues(BLANK_VALUES);
+    onSubmit({ make, model, caliber: values.caliber.trim() || null, notes: notes.trim() || null });
+    if (!initialValues) {
+      setValues(BLANK_VALUES);
+      setNotes('');
+    }
   }
 
   return (
@@ -96,6 +101,28 @@ export function ArmoryItemForm({ initialValues, onSubmit, submitLabel = 'Add', o
           variant="standard"
           value={values.caliber}
           onChange={(e) => handleChange('caliber', e.target.value)}
+          fullWidth
+        />
+      </Box>
+
+      <Box>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          component="label"
+          htmlFor="armory-item-notes"
+          align="center"
+          sx={{ display: 'block', mb: 0.5 }}
+        >
+          Notes (optional)
+        </Typography>
+        <TextField
+          id="armory-item-notes"
+          variant="standard"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          multiline
+          minRows={2}
           fullWidth
         />
       </Box>

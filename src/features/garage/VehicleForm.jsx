@@ -14,8 +14,9 @@ const FIELDS = [
 const BLANK_VALUES = { make: '', model: '', trimLevel: '', color: '' };
 
 /**
- * Form for adding or editing a vehicle. Calls onSubmit({ make, model, trimLevel, color }).
- * In "add" mode (no initialValues) it clears itself after submit; pass initialValues (an
+ * Form for adding or editing a vehicle. Calls
+ * onSubmit({ make, model, trimLevel, color, notes }). In "add" mode (no
+ * initialValues) it clears itself after submit; pass initialValues (an
  * existing vehicle) to prefill for editing.
  */
 export function VehicleForm({ initialValues, onSubmit, submitLabel = 'Add', onCancel }) {
@@ -25,6 +26,7 @@ export function VehicleForm({ initialValues, onSubmit, submitLabel = 'Add', onCa
     trimLevel: initialValues?.trimLevel ?? '',
     color: initialValues?.color ?? '',
   });
+  const [notes, setNotes] = useState(initialValues?.notes ?? '');
 
   function handleChange(id, value) {
     setValues((prev) => ({ ...prev, [id]: value }));
@@ -41,9 +43,13 @@ export function VehicleForm({ initialValues, onSubmit, submitLabel = 'Add', onCa
       model,
       trimLevel: values.trimLevel.trim() || null,
       color: values.color.trim() || null,
+      notes: notes.trim() || null,
     });
 
-    if (!initialValues) setValues(BLANK_VALUES);
+    if (!initialValues) {
+      setValues(BLANK_VALUES);
+      setNotes('');
+    }
   }
 
   return (
@@ -98,6 +104,28 @@ export function VehicleForm({ initialValues, onSubmit, submitLabel = 'Add', onCa
             />
           </Box>
         ))}
+      </Box>
+
+      <Box>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          component="label"
+          htmlFor="vehicle-notes"
+          align="center"
+          sx={{ display: 'block', mb: 0.5 }}
+        >
+          Notes (optional)
+        </Typography>
+        <TextField
+          id="vehicle-notes"
+          variant="standard"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          multiline
+          minRows={2}
+          fullWidth
+        />
       </Box>
 
       <Box sx={{ textAlign: 'center', mt: 1 }}>

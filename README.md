@@ -51,16 +51,18 @@ Run `npm test` for the automated test suite (Vitest) — see
   create Maintenance / Modifications / Wishlist / Equipment lists that then
   show up as tabs — the same tab structure as Garage/Armory. Nothing here
   depends on any other sub-entity existing first.
-- **Garage** — vehicles (make/model/trim/color). Each vehicle's detail page
-  has a Maintenance / Modifications / Wishlist tab row (Maintenance shown
-  by default); only the selected tab's list — and its own add-to-list
-  control — is on screen at a time. Maintenance tasks are real to-do items
-  under the hood (tagged with `vehicleId`), so adding one here also puts it
-  on the main To-Do page and the Overview page, and vice versa. The Garage
-  page itself also has its own page-level Wishlist section, independent of
-  any specific vehicle.
+- **Garage** — vehicles (make/model/trim/color, plus an optional free-form
+  notes field — VIN, insurance renewal, whatever doesn't fit its own
+  field). Each vehicle's detail page has a Maintenance / Modifications /
+  Wishlist tab row (Maintenance shown by default); only the selected tab's
+  list — and its own add-to-list control — is on screen at a time.
+  Maintenance tasks are real to-do items under the hood (tagged with
+  `vehicleId`), so adding one here also puts it on the main To-Do page and
+  the Overview page, and vice versa. The Garage page itself also has its
+  own page-level Wishlist section, independent of any specific vehicle.
 - **Armory** — the same structure as Garage (make/model/caliber instead of
-  trim/color), including its own page-level Wishlist section.
+  trim/color, notes field included too), including its own page-level
+  Wishlist section.
 - **Finances** — a tab row: **Owe** (bills/debts — name, description, $
   owed, optional months left, priority defaulting to Low) and **Wish to
   Purchase** (name, description, item amount, amount saved — the amount-
@@ -163,7 +165,8 @@ supabase/
                               header for why), 002 adds owner-scoped RLS +
                               the profiles table + its trigger, 003 adds
                               todos.tags, 004 is a one-time cleanup for a
-                              data-isolation incident (see its header).
+                              data-isolation incident (see its header), 005
+                              adds notes to garage_vehicles/armory_items.
                               Every statement is safe to re-run (Supabase's
                               GitHub integration replays these against
                               preview branches cloned from production,
@@ -294,6 +297,19 @@ list — no separate "list all tags" query. Because `tags` lives on the same
 maintenance item, a hobby task) can carry free-form tags too, exactly like
 a plain to-do — `TaskDetailPage` reuses `TodoForm` for every task
 regardless of origin, so this needed no extra wiring.
+
+**Only `GarageVehicle`/`ArmoryItem` got a dedicated `notes` field (migration
+005) — nowhere else did.** Every other entity with a detail page already
+had an equivalent freeform text box (`SimpleItemForm`'s `detail` field for
+modifications/wishlist items/hobby list entries; `description` on
+`OweItem`/`WishToPurchaseItem`/`Hobby`) before this was added — giving
+those a second, identically-shaped field would just be a redundant UI
+element with no distinct purpose. Vehicles and firearms were the only two
+with no freeform field at all (just make/model/trim-or-caliber/color), so
+that's the one real gap this closes. If a future field is genuinely
+distinct from an entity's existing freeform text (e.g. actual file
+attachments — see Next steps), that's a different feature, not more of
+this one.
 
 **Auth is real Supabase Auth (email/password).** `AuthContext.jsx` restores
 whatever session Supabase already persisted on load, then stays in sync via
@@ -462,6 +478,23 @@ so it resolves correctly in both places. Supabase's Authentication > URL
 Configuration has both the GitHub Pages URL and `localhost:5173` in its
 redirect allow-list for the same reason.
 
+**`<BrowserRouter>` needs the same base path told to it separately —
+`vite.config.js`'s `base` doesn't do this automatically.** It only affects
+asset URLs (scripts, the manifest, icons); React Router has no idea the
+site lives under `/personal-tracker/` unless it's told via `basename`. This
+was missing for a while and caused a real bug in production: every
+in-app navigation (`<Navigate to="/overview" />`, nav links, `navigate(...)`)
+wrote the URL *without* the prefix — the app kept working since it's all
+client-side routing, but the address bar silently ended up at
+`/overview` instead of `/personal-tracker/overview`. Refreshing at that
+point sent a real request to `jyoung32.github.io/overview`, entirely
+outside the project's path — which hit GitHub's account-level 404, not
+even this repo's own `404.html`, since that's only wired up for paths
+under `/personal-tracker/`. Fixed with
+`<BrowserRouter basename={import.meta.env.BASE_URL}>` in `App.jsx` — same
+env var already used for the password-reset redirect above, so it's `/`
+locally and `/personal-tracker/` in production automatically.
+
 ## Next steps (suggested order)
 
 1. The production bundle is ~780 kB (one chunk, no code-splitting yet) — if
@@ -506,8 +539,11 @@ builds on stability work above rather than competing with it.
 - **Search across collections** — likely a client-side filter first, given
   data volume is personal-scale; revisit if it ever needs to be
   server-side.
-- **Notes/attachments on individual items** — natural fit for the existing
-  `EditableDetails` / detail-page pattern.
+- **File attachments on individual items** (photos, receipts, PDFs) —
+  a bigger lift than the plain-text notes fields already shipped (see
+  "Why it's built this way"): needs a Supabase Storage bucket, storage RLS
+  policies scoping files to the owning account, upload UI, and an
+  attachment list (thumbnail/filename, download, delete) per item.
 - **Export/import (JSON/CSV)** as a personal backup/restore path,
   independent of Supabase's own backups.
 - **Notifications/reminders** — a bigger lift, since it likely wants a
@@ -532,3 +568,7 @@ builds on stability work above rather than competing with it.
   wrapper are the only items still open there.
 - **Free-form tags on to-dos are done** (see "Why it's built this way"
   above) — pruned from Feature Builds above.
+- **Notes on individual items is partly done**: a `notes` field on Garage
+  vehicles and Armory items (migration 005) — the only two entities that
+  had no equivalent freeform field already (see "Why it's built this way").
+  File attachments are still open, reworded above as its own item.

@@ -137,6 +137,16 @@ export function VehicleDetailPage() {
                 {vehicleSubtitle}
               </Typography>
             )}
+            {vehicle.notes && (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                align="center"
+                sx={{ mt: 1, whiteSpace: 'pre-wrap' }}
+              >
+                {vehicle.notes}
+              </Typography>
+            )}
           </EditableDetails>
 
           <RelatedListTabs

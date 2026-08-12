@@ -131,6 +131,16 @@ export function ArmoryItemDetailPage() {
                 {item.caliber}
               </Typography>
             )}
+            {item.notes && (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                align="center"
+                sx={{ mt: 1, whiteSpace: 'pre-wrap' }}
+              >
+                {item.notes}
+              </Typography>
+            )}
           </EditableDetails>
 
           <RelatedListTabs
