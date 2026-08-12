@@ -53,6 +53,10 @@ export function VehicleDetailPage() {
   const vehicleLabel = vehicle
     ? [vehicle.make, vehicle.model, vehicle.trimLevel].filter(Boolean).join(' ')
     : '';
+  const vehicleTitle = vehicle ? [vehicle.make, vehicle.model].filter(Boolean).join(' ') : '';
+  const vehicleSubtitle = vehicle
+    ? [vehicle.trimLevel, vehicle.color].filter(Boolean).join(' · ')
+    : '';
   const vehicleModifications = useMemo(
     () => modifications.filter((mod) => mod.vehicleId === vehicleId),
     [modifications, vehicleId]
@@ -122,11 +126,11 @@ export function VehicleDetailPage() {
             deleteLabel={vehicleLabel}
           >
             <Typography variant="h4" fontWeight={500} align="center" gutterBottom>
-              {vehicleLabel}
+              {vehicleTitle}
             </Typography>
-            {vehicle.color && (
+            {vehicleSubtitle && (
               <Typography variant="body2" color="text.secondary" align="center">
-                {vehicle.color}
+                {vehicleSubtitle}
               </Typography>
             )}
           </EditableDetails>

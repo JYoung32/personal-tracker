@@ -3,24 +3,23 @@ import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import CloseIcon from '@mui/icons-material/Close';
 import {
   FREQUENCY_OPTIONS,
   DAY_OPTIONS,
   DEFAULT_FREQUENCY,
   supportsRecurringDay,
 } from '../../constants/taskOptions';
+import { FormActions } from './FormActions';
 
 /**
  * Form for adding a maintenance task that's also a real to-do item (see
  * MaintenanceSection usage in VehicleDetailPage / ArmoryItemDetailPage).
  * Calls onSubmit({ text, frequency, recurringDay }) and resets itself. Pass
  * onCancel to get a circular X inline next to the Add button (used inside
- * an AddFormPanel add flow). Pass defaultFrequency to start the frequency
- * picker somewhere other than "Daily" (e.g. Hobby tasks default to
- * "One-Time").
+ * an AddFormPanel add flow). Add/Cancel sit centered on their own line
+ * below the text/frequency row. Pass defaultFrequency to start the
+ * frequency picker somewhere other than "Daily" (e.g. Hobby tasks default
+ * to "One-Time").
  */
 export function MaintenanceTaskForm({ onSubmit, onCancel, defaultFrequency = DEFAULT_FREQUENCY }) {
   const [text, setText] = useState('');
@@ -52,7 +51,7 @@ export function MaintenanceTaskForm({ onSubmit, onCancel, defaultFrequency = DEF
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4 }}>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: showRecurringDay ? 1.5 : 0 }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
         <TextField
           placeholder="Add a maintenance task"
           variant="standard"
@@ -72,19 +71,6 @@ export function MaintenanceTaskForm({ onSubmit, onCancel, defaultFrequency = DEF
             </MenuItem>
           ))}
         </Select>
-        <Button type="submit" variant="outlined" disableElevation sx={{ borderRadius: 2, px: 3 }}>
-          Add
-        </Button>
-        {onCancel && (
-          <IconButton
-            aria-label="Cancel"
-            onClick={onCancel}
-            size="small"
-            sx={{ border: '1px solid', borderColor: 'divider', color: 'text.secondary' }}
-          >
-            <CloseIcon fontSize="small" />
-          </IconButton>
-        )}
       </Box>
 
       {showRecurringDay && (
@@ -93,7 +79,7 @@ export function MaintenanceTaskForm({ onSubmit, onCancel, defaultFrequency = DEF
           onChange={(e) => setRecurringDay(e.target.value)}
           variant="standard"
           displayEmpty
-          sx={{ minWidth: 160, fontSize: 14 }}
+          sx={{ minWidth: 160, fontSize: 14, mb: 2 }}
         >
           <MenuItem value="">
             <em>No specific day</em>
@@ -105,6 +91,10 @@ export function MaintenanceTaskForm({ onSubmit, onCancel, defaultFrequency = DEF
           ))}
         </Select>
       )}
+
+      <Box sx={{ textAlign: 'center' }}>
+        <FormActions submitLabel="Add" onCancel={onCancel} />
+      </Box>
     </Box>
   );
 }

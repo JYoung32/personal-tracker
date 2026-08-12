@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
@@ -14,7 +14,9 @@ import { AddToggleActions } from './AddToggleActions';
  * list, e.g. HobbyDetailPage's "Hobby Tasks"). Unlike SimpleListSection,
  * these tasks are real to-do items (see MaintenanceTaskForm), so each also
  * exposes frequency and recurring-day controls. A "+" icon toggles the add
- * form. Pass defaultFrequency to change the add form's starting frequency.
+ * form; once open, MaintenanceTaskForm has its own centered Add/Cancel, so
+ * the header icon is hidden rather than duplicating them. Pass
+ * defaultFrequency to change the add form's starting frequency.
  */
 export function MaintenanceSection({
   title = 'Maintenance',
@@ -30,7 +32,6 @@ export function MaintenanceSection({
   defaultFrequency,
 }) {
   const [showForm, setShowForm] = useState(false);
-  const panelRef = useRef(null);
 
   return (
     <Box>
@@ -47,14 +48,9 @@ export function MaintenanceSection({
             {title}
           </Typography>
         )}
-        <AddToggleActions
-          open={showForm}
-          onOpen={() => setShowForm(true)}
-          onSave={() => panelRef.current?.submit()}
-          onCancel={() => setShowForm(false)}
-          addLabel={`Add to ${title}`}
-          size="small"
-        />
+        {!showForm && (
+          <AddToggleActions open={false} onOpen={() => setShowForm(true)} addLabel={`Add to ${title}`} size="small" />
+        )}
       </Box>
 
       {error && (
@@ -64,7 +60,6 @@ export function MaintenanceSection({
       )}
 
       <AddFormPanel
-        ref={panelRef}
         open={showForm}
         onClose={() => setShowForm(false)}
         onSubmit={onAdd}

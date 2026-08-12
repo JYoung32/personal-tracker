@@ -60,10 +60,8 @@ export function GaragePage() {
       ) : (
         <NavigableRowList
           items={vehicles}
-          getLabel={(vehicle) =>
-            [vehicle.make, vehicle.model, vehicle.trimLevel].filter(Boolean).join(' ')
-          }
-          getSecondaryLabel={(vehicle) => vehicle.color}
+          getLabel={(vehicle) => [vehicle.make, vehicle.model].filter(Boolean).join(' ')}
+          getSecondaryLabel={(vehicle) => [vehicle.trimLevel, vehicle.color].filter(Boolean).join(' · ')}
           onItemClick={(vehicle) => navigate(`/garage/${vehicle.id}`)}
           onDelete={removeItem}
           emptyMessage="Nothing here — add a vehicle above."

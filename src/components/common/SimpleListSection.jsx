@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
@@ -13,7 +13,9 @@ import { AddToggleActions } from './AddToggleActions';
  * than its delete button) opens its full edit view via onItemClick. Used
  * both as one tab's content within RelatedListTabs (title hidden — the tab
  * label already shows it) and standalone on a page (pass `showHeading` to
- * render `title` above the list).
+ * render `title` above the list). Once the form is open, SingleFieldForm
+ * has its own centered Add/Cancel, so the header icon is hidden rather than
+ * duplicating them.
  */
 export function SimpleListSection({
   title,
@@ -27,7 +29,6 @@ export function SimpleListSection({
   showHeading = false,
 }) {
   const [showForm, setShowForm] = useState(false);
-  const panelRef = useRef(null);
 
   return (
     <Box>
@@ -44,14 +45,9 @@ export function SimpleListSection({
             {title}
           </Typography>
         )}
-        <AddToggleActions
-          open={showForm}
-          onOpen={() => setShowForm(true)}
-          onSave={() => panelRef.current?.submit()}
-          onCancel={() => setShowForm(false)}
-          addLabel={`Add to ${title}`}
-          size="small"
-        />
+        {!showForm && (
+          <AddToggleActions open={false} onOpen={() => setShowForm(true)} addLabel={`Add to ${title}`} size="small" />
+        )}
       </Box>
 
       {error && (
@@ -61,7 +57,6 @@ export function SimpleListSection({
       )}
 
       <AddFormPanel
-        ref={panelRef}
         open={showForm}
         onClose={() => setShowForm(false)}
         onSubmit={onAdd}
