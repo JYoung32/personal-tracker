@@ -7,7 +7,7 @@
  * camelCase name; every Postgres table/column is snake_case. Rather than
  * hand-maintaining a key -> table map and per-collection field mappers,
  * this converts generically in both directions — so a new collection only
- * needs a matching table (see supabase/schema.sql), never a code change
+ * needs a matching table (see supabase/migrations/), never a code change
  * here.
  */
 import { supabase } from '../supabase/client';

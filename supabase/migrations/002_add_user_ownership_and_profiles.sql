@@ -1,7 +1,7 @@
 -- 002: per-user data ownership + profiles table
 --
--- Every collection table currently has an "allow all" RLS policy (fine
--- while there was no real login; see schema.sql's original note). Now that
+-- Every collection table currently has an "allow all" RLS policy from
+-- 001_initial_schema.sql (fine while there was no real login). Now that
 -- Supabase Auth is wired up, this locks each row to the account that
 -- created it, and adds a `profiles` table (username, first/last name) —
 -- one row per auth user, auto-created on signup.

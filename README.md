@@ -9,10 +9,10 @@ GitHub Actions on every push to `master` — see [Deployment](#deployment).
 
 ## Getting started
 
-1. Create a Supabase project, then in its SQL Editor run
-   [`supabase/schema.sql`](supabase/schema.sql) (fresh project) — or, if
-   tables already exist, apply anything new under
-   [`supabase/migrations/`](supabase/migrations) in order.
+1. Create a Supabase project, then in its SQL Editor run each file under
+   [`supabase/migrations/`](supabase/migrations) in order (`001`, then
+   `002`, ...). If you're catching an existing project up, just run
+   whichever ones are new — they're all safe to re-run.
 2. Copy `.env.example` to `.env.local` and fill in your project's URL and
    anon key (Project Settings > API in the Supabase dashboard).
 3. In the Supabase dashboard under Authentication > URL Configuration, add
@@ -142,10 +142,13 @@ src/
     common/
       Shared building blocks reused across features — see below.
 supabase/
-  schema.sql                 Fresh-install reference: every table, owner-
-                              scoped RLS, the profiles table + its trigger
-  migrations/                 Incremental changes for a project that
-                              already ran an earlier schema.sql
+  migrations/                 The schema, in order — 001 creates every
+                              table with "allow all" RLS, 002 adds owner-
+                              scoped RLS + the profiles table + its
+                              trigger. Every statement is safe to re-run
+                              (Supabase's GitHub integration replays these
+                              against preview branches cloned from
+                              production, which already has them applied)
 public/
   404.html                    GitHub Pages SPA-routing redirect (see
                               Deployment)
@@ -209,7 +212,7 @@ Postgres table/column is snake_case (`garage_vehicles`, `owe_items`,
 `trim_level`, ...). `supabaseAdapter.js` converts both directions
 generically (`toSnakeCase`/`toCamelCase` on every object key, and on the
 collection key itself to get the table name), so a brand new collection
-only ever needs a matching table in `supabase/schema.sql` — never a code
+only ever needs a matching table in `supabase/migrations/` — never a code
 change in the adapter.
 
 **Every row is owned by the account that created it.** Each table has a
@@ -246,13 +249,22 @@ whatever session Supabase already persisted on load, then stays in sync via
 session created when a "Forgot password?" link is clicked).
 `ProtectedRoute` just checks `isAuthenticated`, unchanged from before the
 swap. New accounts get a blank `profiles` row automatically via a Postgres
-trigger (`handle_new_user`, see `supabase/schema.sql`) — the app never has
-to create it.
+trigger (`handle_new_user`, see `supabase/migrations/002_add_user_ownership_and_profiles.sql`)
+— the app never has to create it.
 
 **Username is optional and separate from the login identity.** Supabase
 Auth's identity is always the email; `profiles.username` is just a display
 name the nav bar prefers when set (`profile.username || user?.email`), with
 a unique constraint at the database level so two accounts can't collide.
+
+**Every migration must be safe to re-run.** Supabase's GitHub integration
+replays every file in `supabase/migrations/` against preview branches
+cloned from production — which already has all of them applied — so a
+plain `CREATE TABLE`/`ALTER TABLE ... ADD COLUMN`/`CREATE POLICY` errors
+there even though it's a no-op. Every migration in this repo guards with
+`IF NOT EXISTS`/`IF EXISTS`/`OR REPLACE` (or, for the one-time backfill in
+002, checks whether there's actually anything to backfill before doing
+anything). Write new migrations the same way.
 
 **Nav-bar hover dropdowns use plain CSS `:hover`, not MUI `Menu`.** An
 earlier attempt with `Menu` flickered because its modal overlay renders on
