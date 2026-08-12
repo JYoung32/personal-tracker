@@ -18,24 +18,30 @@ is currently a mock placeholder (see below).
 
 - **Overview** — the landing page (click "Personal Tracker" in the nav bar,
   or just log in). Shows every task across every tab — plain to-dos plus
-  Garage/Armory maintenance tasks — collectively, using the same
-  tabs/filter/list UI as To-Do. Read-only with respect to creating tasks;
-  each tab still owns adding its own.
+  Garage/Armory/Hobbies tasks — collectively, using the same tabs/filter/
+  list UI as To-Do. Read-only with respect to creating tasks; each tab
+  still owns adding its own.
 - **To-Do** — tasks created directly on this page (description, due date,
   priority, frequency — daily/weekly/monthly/quarterly/yearly). Recurring
   tasks auto-uncheck on a fixed schedule anchored to when the task was
   created (see `utils/recurrence.js`), optionally aligned to a day of the
   week for the first reset. Click a task to open a full edit view.
-- **Hobbies** — a 4-level hierarchy: Hobby → Items (e.g. a specific car) →
-  Lists (e.g. "Maintenance") → checklist Entries.
+- **Hobbies** — a hobby's page has a pencil-editable name/description, a
+  "Hobby Tasks" section (real to-dos, generated right there, defaulting to
+  One-Time frequency instead of Daily), and a "Lists" section where you
+  create Maintenance / Modifications / Wishlist / Equipment lists that then
+  show up as tabs — the same tab structure as Garage/Armory. Nothing here
+  depends on any other sub-entity existing first.
 - **Garage** — vehicles (make/model/trim/color). Each vehicle's detail page
   has a Maintenance / Modifications / Wishlist tab row (Maintenance shown
   by default); only the selected tab's list — and its own add-to-list
   control — is on screen at a time. Maintenance tasks are real to-do items
   under the hood (tagged with `vehicleId`), so adding one here also puts it
-  on the main To-Do page and the Overview page, and vice versa.
+  on the main To-Do page and the Overview page, and vice versa. The Garage
+  page itself also has its own page-level Wishlist section, independent of
+  any specific vehicle.
 - **Armory** — the same structure as Garage (make/model/caliber instead of
-  trim/color).
+  trim/color), including its own page-level Wishlist section.
 - **Finances** — placeholder page (formerly "Purchase Orders"), not yet
   built out.
 - **Profile** — username, first name, last name, reached by clicking the
@@ -66,6 +72,8 @@ src/
                               singleton profile record
   constants/
     taskOptions.js            Frequency/priority/day-of-week option lists
+    hobbyListTypes.js          The 4 hobby list types (Maintenance/
+                               Modifications/Wishlist/Equipment)
   utils/
     recurrence.js              Date-only parsing + reset-schedule math
   features/
@@ -75,9 +83,11 @@ src/
                                OverviewPage), useTodoFilters (sort/filter
                                logic), TodoForm, TodoList, TodoItem,
                                TaskDetailPage
-    hobbies/                  HobbiesPage + 3 nested detail pages
-                               (item → list → entries)
-    garage/                   GaragePage, VehicleForm, VehicleDetailPage,
+    hobbies/                  HobbiesPage, HobbyDetailPage (tasks + tabbed
+                               lists), HobbyListForm, HobbyListEntryDetailPage
+    garage/                   GaragePage (vehicles + page-level Wishlist),
+                               VehicleForm, VehicleDetailPage (tabbed
+                               Maintenance/Modifications/Wishlist),
                                modification/wishlist detail pages
     armory/                   Mirrors garage/ (firearms instead of vehicles)
     purchases/                PurchasesPage — placeholder ("Finances" tab)
@@ -101,13 +111,22 @@ src/
   ends with.
 - **Edit-in-place**: `EditableDetails` swaps a read-only summary for a form;
   its header shows a pencil (edit) and, if `onDelete` is passed, a red X
-  (delete) in the upper-right corner. `SimpleItemDetailPage` (modification/
-  wishlist item edit views) and `TaskDetailPage` follow the same red-X-in-
-  header pattern for delete.
+  (delete) in the upper-right corner — used for a vehicle/armory item's
+  core fields (pencil + delete) and a hobby's name/description (pencil
+  only, since hobbies delete from the Hobbies list page instead).
+  `SimpleItemDetailPage` (modification/wishlist item edit views) and
+  `TaskDetailPage` follow the same red-X-in-header pattern for delete, with
+  a grey Cancel X inline next to Save.
 - **Related-list tabs**: `RelatedListTabs` renders a row of tabs where only
   the selected tab's content is mounted — used for a vehicle/armory item's
-  Maintenance / Modifications / Wishlist lists, so each tab's add-to-list
-  control only shows and works for the list currently selected.
+  Maintenance / Modifications / Wishlist lists and a hobby's user-created
+  lists, so each tab's add-to-list control only shows and works for the
+  list currently selected.
+- **`SimpleListSection`/`MaintenanceSection`**: the actual tab content (or,
+  with `showHeading`, a standalone section with a visible title — used for
+  a hobby's "Hobby Tasks" and Garage/Armory's page-level Wishlist).
+  `MaintenanceSection` accepts `defaultFrequency` to change what the add
+  form starts on (Hobby Tasks default to One-Time instead of Daily).
 - **Delete confirmation**: `ConfirmDeleteButton` wraps any delete trigger
   with a confirmation dialog — used everywhere something can be deleted.
 - **List rendering**: `NavigableRowList` (click to drill in),
@@ -135,18 +154,26 @@ Supabase:
 2. Change the one-line export in `services/storage/index.js`.
 3. Nothing else changes.
 
-**Lists share one hook.** Todos, hobby items/lists/entries, vehicles,
+**Lists share one hook.** Todos, hobbies/hobby lists/list entries, vehicles,
 firearms, modifications, and wishlist items are all just "collections" with
 different item shapes. `useCollection(key)` gives any feature loading state
 + add/update/remove for free.
 
 **To-Do and Overview share one board.** Both pages fetch the full `todos`
 collection and render `TodoBoard` (tabs, frequency filter, sorted list).
-TodoPage filters to tasks with no `vehicleId`/`armoryItemId` before handing
-them to the board and passes `onAddTodo`; OverviewPage passes the
-unfiltered list and omits `onAddTodo`, which hides `TodoBoard`'s add form —
-so creating a task always happens on the tab that owns it, while Overview
-stays a pure read-through.
+TodoPage filters to tasks with no `vehicleId`/`armoryItemId`/`hobbyId`
+before handing them to the board and passes `onAddTodo`; OverviewPage
+passes the unfiltered list and omits `onAddTodo`, which hides `TodoBoard`'s
+add form — so creating a task always happens on the tab that owns it, while
+Overview stays a pure read-through.
+
+**A hobby's "maintenance-type list" tasks and its own "Hobby Tasks" are
+both just `todos`, distinguished by tags.** A task belongs to a hobby
+directly if it has `hobbyId` but no `hobbyListId`; it belongs to one of the
+hobby's Maintenance-type lists if it has both. Garage/Armory maintenance
+tasks follow the same tagging idea with `vehicleId`/`armoryItemId` (there's
+only ever one Maintenance list per vehicle/firearm, so no extra list-id tag
+is needed there).
 
 **Auth is a clearly-marked placeholder.** `AuthContext.jsx` accepts any
 non-empty username/password and just gates routes via `ProtectedRoute`. It's

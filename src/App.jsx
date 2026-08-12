@@ -11,17 +11,18 @@ import { TodoPage } from './features/todos/TodoPage';
 import { TaskDetailPage } from './features/todos/TaskDetailPage';
 import { HobbiesPage } from './features/hobbies/HobbiesPage';
 import { HobbyDetailPage } from './features/hobbies/HobbyDetailPage';
-import { HobbyItemDetailPage } from './features/hobbies/HobbyItemDetailPage';
-import { HobbyListDetailPage } from './features/hobbies/HobbyListDetailPage';
+import { HobbyListEntryDetailPage } from './features/hobbies/HobbyListEntryDetailPage';
 import { PurchasesPage } from './features/purchases/PurchasesPage';
 import { GaragePage } from './features/garage/GaragePage';
 import { VehicleDetailPage } from './features/garage/VehicleDetailPage';
 import { GarageModificationDetailPage } from './features/garage/GarageModificationDetailPage';
 import { GarageWishlistDetailPage } from './features/garage/GarageWishlistDetailPage';
+import { GarageWishlistItemDetailPage } from './features/garage/GarageWishlistItemDetailPage';
 import { ArmoryPage } from './features/armory/ArmoryPage';
 import { ArmoryItemDetailPage } from './features/armory/ArmoryItemDetailPage';
 import { ArmoryModificationDetailPage } from './features/armory/ArmoryModificationDetailPage';
 import { ArmoryWishlistDetailPage } from './features/armory/ArmoryWishlistDetailPage';
+import { ArmoryWishlistItemDetailPage } from './features/armory/ArmoryWishlistItemDetailPage';
 import { ProfilePage } from './features/profile/ProfilePage';
 
 export default function App() {
@@ -74,18 +75,10 @@ export default function App() {
               }
             />
             <Route
-              path="/hobbies/:hobbyId/items/:itemId"
+              path="/hobbies/:hobbyId/lists/:listId/entries/:entryId"
               element={
                 <ProtectedRoute>
-                  <HobbyItemDetailPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/hobbies/:hobbyId/items/:itemId/lists/:listId"
-              element={
-                <ProtectedRoute>
-                  <HobbyListDetailPage />
+                  <HobbyListEntryDetailPage />
                 </ProtectedRoute>
               }
             />
@@ -102,6 +95,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <GaragePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/garage/wishlist/:wishId"
+              element={
+                <ProtectedRoute>
+                  <GarageWishlistItemDetailPage />
                 </ProtectedRoute>
               }
             />
@@ -134,6 +135,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <ArmoryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/armory/wishlist/:wishId"
+              element={
+                <ProtectedRoute>
+                  <ArmoryWishlistItemDetailPage />
                 </ProtectedRoute>
               }
             />

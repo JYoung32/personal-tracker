@@ -1,28 +1,30 @@
 import { useState } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
+import { HOBBY_LIST_TYPES, DEFAULT_HOBBY_LIST_TYPE } from '../../constants/hobbyListTypes';
 import { FormActions } from '../../components/common/FormActions';
 
 /**
- * Form for adding or editing a hobby. Calls onSubmit({ name, description }). In "add" mode
- * (no initialValues) it clears itself after submit; pass initialValues (an existing hobby)
- * to prefill for editing.
+ * Form for adding a list directly to a hobby. Calls onSubmit({ name, type })
+ * and resets itself. `type` decides the tab behavior it gets on
+ * HobbyDetailPage (Maintenance tasks sync to the to-do list;
+ * Modifications/Wishlist/Equipment are add-or-remove lists).
  */
-export function HobbyForm({ initialValues, onSubmit, submitLabel = 'Add', onCancel }) {
-  const [name, setName] = useState(initialValues?.name ?? '');
-  const [description, setDescription] = useState(initialValues?.description ?? '');
+export function HobbyListForm({ onSubmit, onCancel }) {
+  const [name, setName] = useState('');
+  const [type, setType] = useState(DEFAULT_HOBBY_LIST_TYPE);
 
   function handleSubmit(e) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
 
-    onSubmit({ name: trimmed, description: description.trim() || null });
-    if (!initialValues) {
-      setName('');
-      setDescription('');
-    }
+    onSubmit({ name: trimmed, type });
+    setName('');
+    setType(DEFAULT_HOBBY_LIST_TYPE);
   }
 
   return (
@@ -36,14 +38,14 @@ export function HobbyForm({ initialValues, onSubmit, submitLabel = 'Add', onCanc
           variant="caption"
           color="text.secondary"
           component="label"
-          htmlFor="hobby-name"
+          htmlFor="hobby-list-name"
           align="center"
           sx={{ display: 'block', mb: 0.5 }}
         >
-          Hobby name
+          List name
         </Typography>
         <TextField
-          id="hobby-name"
+          id="hobby-list-name"
           variant="standard"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -56,25 +58,29 @@ export function HobbyForm({ initialValues, onSubmit, submitLabel = 'Add', onCanc
           variant="caption"
           color="text.secondary"
           component="label"
-          htmlFor="hobby-description"
+          htmlFor="hobby-list-type"
           align="center"
           sx={{ display: 'block', mb: 0.5 }}
         >
-          Description (optional)
+          List type
         </Typography>
-        <TextField
-          id="hobby-description"
+        <Select
+          id="hobby-list-type"
           variant="standard"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          multiline
-          minRows={2}
+          value={type}
+          onChange={(e) => setType(e.target.value)}
           fullWidth
-        />
+        >
+          {HOBBY_LIST_TYPES.map((opt) => (
+            <MenuItem key={opt.value} value={opt.value}>
+              {opt.label}
+            </MenuItem>
+          ))}
+        </Select>
       </Box>
 
       <Box sx={{ textAlign: 'center', mt: 1 }}>
-        <FormActions submitLabel={submitLabel} onCancel={onCancel} />
+        <FormActions submitLabel="Add" onCancel={onCancel} />
       </Box>
     </Box>
   );

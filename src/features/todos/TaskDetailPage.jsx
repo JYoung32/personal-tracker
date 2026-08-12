@@ -78,7 +78,13 @@ export function TaskDetailPage() {
             </Box>
           </Box>
 
-          <TodoForm key={todoId} initialValues={todo} submitLabel="Save" onSubmit={handleSave} />
+          <TodoForm
+            key={todoId}
+            initialValues={todo}
+            submitLabel="Save"
+            onSubmit={handleSave}
+            onCancel={() => navigate(-1)}
+          />
         </>
       )}
     </Container>

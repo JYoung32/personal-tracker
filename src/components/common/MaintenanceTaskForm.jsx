@@ -18,11 +18,13 @@ import {
  * MaintenanceSection usage in VehicleDetailPage / ArmoryItemDetailPage).
  * Calls onSubmit({ text, frequency, recurringDay }) and resets itself. Pass
  * onCancel to get a circular X inline next to the Add button (used inside
- * an AddFormPanel add flow).
+ * an AddFormPanel add flow). Pass defaultFrequency to start the frequency
+ * picker somewhere other than "Daily" (e.g. Hobby tasks default to
+ * "One-Time").
  */
-export function MaintenanceTaskForm({ onSubmit, onCancel }) {
+export function MaintenanceTaskForm({ onSubmit, onCancel, defaultFrequency = DEFAULT_FREQUENCY }) {
   const [text, setText] = useState('');
-  const [frequency, setFrequency] = useState(DEFAULT_FREQUENCY);
+  const [frequency, setFrequency] = useState(defaultFrequency);
   const [recurringDay, setRecurringDay] = useState('');
 
   const showRecurringDay = supportsRecurringDay(frequency);
@@ -44,7 +46,7 @@ export function MaintenanceTaskForm({ onSubmit, onCancel }) {
     });
 
     setText('');
-    setFrequency(DEFAULT_FREQUENCY);
+    setFrequency(defaultFrequency);
     setRecurringDay('');
   }
 
