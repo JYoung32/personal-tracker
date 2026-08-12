@@ -33,6 +33,7 @@ export function HobbyDetailPage() {
   const {
     items: hobbies,
     loading: hobbiesLoading,
+    error: hobbiesError,
     updateItem: updateHobby,
   } = useCollection('hobbies');
   const {
@@ -181,6 +182,7 @@ export function HobbyDetailPage() {
             FormComponent={HobbyForm}
             values={hobby}
             onSave={(values) => updateHobby(hobbyId, values)}
+            error={hobbiesError}
           >
             <Typography variant="h4" fontWeight={500} align="center" gutterBottom>
               {hobby.name}

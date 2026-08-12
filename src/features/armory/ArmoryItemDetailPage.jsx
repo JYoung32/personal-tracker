@@ -21,6 +21,7 @@ export function ArmoryItemDetailPage() {
   const {
     items,
     loading: itemsLoading,
+    error: itemsError,
     updateItem: updateArmoryItem,
     removeItem: removeArmoryItem,
   } = useCollection('armoryItems');
@@ -91,8 +92,10 @@ export function ArmoryItemDetailPage() {
     updateTodo(id, { recurringDay });
   }
 
-  function handleDeleteItem() {
-    removeArmoryItem(itemId);
+  // ConfirmDeleteButton (via EditableDetails) awaits this and only closes
+  // its dialog on success — no local try/catch needed here.
+  async function handleDeleteItem() {
+    await removeArmoryItem(itemId);
     navigate('/armory');
   }
 
@@ -118,6 +121,7 @@ export function ArmoryItemDetailPage() {
             onSave={(values) => updateArmoryItem(itemId, values)}
             onDelete={handleDeleteItem}
             deleteLabel={itemLabel}
+            error={itemsError}
           >
             <Typography variant="h4" fontWeight={500} align="center" gutterBottom>
               {itemLabel}

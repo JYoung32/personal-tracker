@@ -28,9 +28,15 @@ export const AddFormPanel = forwardRef(function AddFormPanel(
 
   if (!open) return null;
 
-  function handleSubmit(values) {
-    onSubmit(values);
-    onClose();
+  async function handleSubmit(values) {
+    try {
+      await onSubmit(values);
+      onClose();
+    } catch {
+      // onSubmit's collection already surfaced a friendly error (see
+      // useCollection.js) — leave the panel open instead of closing it as
+      // if the add had succeeded, so the user can see the error and retry
+    }
   }
 
   return (

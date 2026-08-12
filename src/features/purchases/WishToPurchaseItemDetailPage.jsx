@@ -4,6 +4,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import CircularProgress from '@mui/material/CircularProgress';
+import Alert from '@mui/material/Alert';
 import CloseIcon from '@mui/icons-material/Close';
 import { useCollection } from '../../hooks/useCollection';
 import { ConfirmDeleteButton } from '../../components/common/ConfirmDeleteButton';
@@ -17,23 +18,35 @@ import { WishToPurchaseForm } from './WishToPurchaseForm';
 export function WishToPurchaseItemDetailPage() {
   const { wishId } = useParams();
   const navigate = useNavigate();
-  const { items, loading, updateItem, removeItem } = useCollection('wishToPurchaseItems');
+  const { items, loading, error, updateItem, removeItem } = useCollection('wishToPurchaseItems');
 
   const item = items.find((i) => i.id === wishId);
 
-  function handleSave(values) {
-    updateItem(wishId, values);
-    navigate('/purchases');
+  async function handleSave(values) {
+    try {
+      await updateItem(wishId, values);
+      navigate('/purchases');
+    } catch {
+      // error is rendered below; stay on the form so nothing is lost
+    }
   }
 
-  function handleDelete() {
-    removeItem(wishId);
+  // ConfirmDeleteButton awaits this and only closes its dialog on success —
+  // no local try/catch needed here.
+  async function handleDelete() {
+    await removeItem(wishId);
     navigate('/purchases');
   }
 
   return (
     <Container maxWidth="sm" sx={{ py: 8 }}>
       <BackLink to="/purchases" label="Finances" />
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>

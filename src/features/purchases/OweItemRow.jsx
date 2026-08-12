@@ -32,10 +32,16 @@ export function OweItemRow({ item, onItemClick, onAmountChange, onMonthsLeftChan
     setEditingAmount(true);
   }
 
-  function commitAmount() {
+  async function commitAmount() {
     const parsed = Number(amountDraft);
     if (!Number.isNaN(parsed) && amountDraft !== '' && parsed !== item.amountOwed) {
-      onAmountChange(item.id, parsed);
+      try {
+        await onAmountChange(item.id, parsed);
+      } catch {
+        // error surfaces via OweSection's error state; keep this field in
+        // edit mode (with the typed value) instead of silently reverting
+        return;
+      }
     }
     setEditingAmount(false);
   }
@@ -56,10 +62,19 @@ export function OweItemRow({ item, onItemClick, onAmountChange, onMonthsLeftChan
     setEditingMonths(true);
   }
 
-  function commitMonths() {
+  async function commitMonths() {
     const newValue = monthsDraft === '' ? null : Number(monthsDraft);
     if (newValue === null || !Number.isNaN(newValue)) {
-      if (newValue !== item.monthsLeft) onMonthsLeftChange(item.id, newValue);
+      if (newValue !== item.monthsLeft) {
+        try {
+          await onMonthsLeftChange(item.id, newValue);
+        } catch {
+          // error surfaces via OweSection's error state; keep this field
+          // in edit mode (with the typed value) instead of silently
+          // reverting
+          return;
+        }
+      }
     }
     setEditingMonths(false);
   }

@@ -15,6 +15,7 @@ import Button from '@mui/material/Button';
  */
 export function ConfirmDeleteButton({ onConfirm, itemLabel = 'this item', renderTrigger }) {
   const [open, setOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   function handleOpen(e) {
     e?.stopPropagation();
@@ -26,10 +27,18 @@ export function ConfirmDeleteButton({ onConfirm, itemLabel = 'this item', render
     setOpen(false);
   }
 
-  function handleConfirm(e) {
+  async function handleConfirm(e) {
     e?.stopPropagation();
-    onConfirm();
-    setOpen(false);
+    setDeleting(true);
+    try {
+      await onConfirm();
+      setOpen(false);
+    } catch {
+      // caller's collection already surfaced a friendly error — leave the
+      // dialog open instead of closing it as if the delete had succeeded
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -57,10 +66,16 @@ export function ConfirmDeleteButton({ onConfirm, itemLabel = 'this item', render
           <DialogContentText>This can&apos;t be undone.</DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} color="inherit">
+          <Button onClick={handleClose} color="inherit" disabled={deleting}>
             Cancel
           </Button>
-          <Button onClick={handleConfirm} color="error" variant="contained" disableElevation>
+          <Button
+            onClick={handleConfirm}
+            color="error"
+            variant="contained"
+            disableElevation
+            disabled={deleting}
+          >
             Delete
           </Button>
         </DialogActions>

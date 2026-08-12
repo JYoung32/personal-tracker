@@ -266,6 +266,33 @@ there even though it's a no-op. Every migration in this repo guards with
 002, checks whether there's actually anything to backfill before doing
 anything). Write new migrations the same way.
 
+**Mutation failures surface through one choke point, not per-page
+plumbing.** `useCollection.js`'s `addItem`/`updateItem`/`removeItem` catch
+whatever `storageAdapter` throws, map it to a short message via
+`utils/friendlyError.js`, and set it as the collection's own `error` —
+which almost every page already renders as an `<Alert>`. They also
+re-throw the original error so a caller that needs to *react* (not just
+display something) still can. Three shared components lean on that:
+`AddFormPanel` and `ConfirmDeleteButton` await the call and only close
+(the panel / the confirm dialog) on success, and `EditableDetails` only
+drops out of edit mode on success — so a failed save or delete now shows
+the error and leaves you where you were, instead of silently reverting or
+navigating away as if it had worked. A standalone detail page
+(`SimpleItemDetailPage`, `TaskDetailPage`, `OweItemDetailPage`,
+`WishToPurchaseItemDetailPage`) follows the same shape by hand: `try`/
+`await`/`catch` around its own `handleSave`, and an un-caught `async
+handleDelete` that relies on `ConfirmDeleteButton` to catch the rethrow.
+Writing a *new* mutation that should behave the same way just means
+awaiting it and following one of these two patterns — the error message
+itself needs no extra work.
+
+**A rendering bug doesn't blank the whole app.** `App.jsx` wraps `<Routes>`
+(not `<NavBar>`) in `ErrorBoundary`, keyed on the current path — a crash on
+one page shows a fallback instead of a white screen, the nav bar stays
+usable to get somewhere else, and navigating away remounts the boundary
+fresh (React's own recommended reset trick, avoiding a `componentDidUpdate`
+`setState` some linters flag).
+
 **Nav-bar hover dropdowns use plain CSS `:hover`, not MUI `Menu`.** An
 earlier attempt with `Menu` flickered because its modal overlay renders on
 top of the trigger button once open, which makes the browser think the
@@ -339,3 +366,78 @@ redirect allow-list for the same reason.
    `React.lazy`/dynamic `import()`.
 2. A true native wrapper (Capacitor) for an actual App Store/Play Store
    listing, if that's ever wanted over "installs like an app" via the PWA.
+
+# Personal Tracker — Roadmap
+
+Compiled from a 1.0 code review and roadmap discussion (Aug 2026). Organized
+by category, each with a suggested priority so you can pick up work without
+re-deriving context.
+
+---
+
+## Technical / Architecture Improvements
+
+**Suggested priority: Next, before adding more surface area.** The codebase
+is clean today — these keep it that way as it grows.
+
+- **Code-split routes with `React.lazy`.** `App.jsx` eagerly imports all
+  ~20 page components, contributing to the ~780 kB single-chunk bundle
+  your own README already flags. Wrap each route element in
+  `React.lazy`/`Suspense` — straightforward, isolated change per route.
+- **Add automated tests**, starting with pure-logic modules that don't need
+  UI mounting:
+  - `utils/recurrence.js` (`currentResetBoundary`, `firstResetDate`) —
+    highest value, easy to get wrong, easy to test with fixed dates.
+  - `useCollection.js` — mock the adapter, verify add/update/remove state
+    transitions.
+  - `supabaseAdapter.js`'s `toSnakeCase`/`toCamelCase` round-tripping.
+- **Fix `useRecurringReset` redundant-update potential.** It re-runs on
+  every `items` reference change (any add/update/remove on the page, not
+  just recurrence-related ones), and resets recurring items one
+  `updateItem` call at a time instead of batching. Not broken, but worth
+  tightening once tests exist to confirm behavior doesn't regress.
+- **Revisit monthly/yearly interval math.** `FREQUENCY_INTERVAL_DAYS` uses
+  fixed `30`/`365` day approximations, which will drift from true calendar
+  months/years over time (e.g. a task anchored on the 31st walks backward
+  through shorter months). Fine for now — flag for calendar-accurate logic
+  if it ever starts to matter in practice.
+- **Consider a native wrapper (Capacitor)** if you ever want actual App
+  Store/Play Store presence beyond "installs like an app" via the PWA —
+  per your own README's next-steps note.
+
+---
+
+## Feature Builds
+
+**Suggested priority: After the above, and roughly in this order** — each
+builds on stability work above rather than competing with it.
+
+- **Dashboard/stats on Overview** — completion rate over time, streaks,
+  most-active hobby, upcoming maintenance across Garage/Armory. The
+  aggregation plumbing already exists (Overview reads the full cross-tab
+  list); this is mostly a display layer on top.
+- **Tags or free-form categorization** on top of the existing hobby/vehicle/
+  firearm tagging scheme, so to-dos not tied to a specific entity can still
+  be grouped (e.g. "home," "work").
+- **Search across collections** — likely a client-side filter first, given
+  data volume is personal-scale; revisit if it ever needs to be
+  server-side.
+- **Notes/attachments on individual items** — natural fit for the existing
+  `EditableDetails` / detail-page pattern.
+- **Export/import (JSON/CSV)** as a personal backup/restore path,
+  independent of Supabase's own backups.
+- **Notifications/reminders** — a bigger lift, since it likely wants a
+  Supabase Edge Function or scheduled job rather than pure client code;
+  worth scoping separately once the rest of the roadmap settles.
+
+---
+
+## Notes
+
+- This list reflects the state of the repo as of this review — re-generate
+  or prune sections as items get done rather than letting it drift out of
+  sync with the code.
+- Nothing here is committed to — treat priority labels as a starting
+  suggestion, not a fixed order.
+- **Error Handling & Reliability is done** (see "Why it's built this way"
+  above for how) — pruned from this list rather than left checked off.

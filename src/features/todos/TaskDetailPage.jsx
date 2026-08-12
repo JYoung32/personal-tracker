@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import CircularProgress from '@mui/material/CircularProgress';
+import Alert from '@mui/material/Alert';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
 import { useCollection } from '../../hooks/useCollection';
@@ -21,17 +22,23 @@ import { TodoForm } from './TodoForm';
 export function TaskDetailPage() {
   const { todoId } = useParams();
   const navigate = useNavigate();
-  const { items: todos, loading, updateItem, removeItem } = useCollection('todos');
+  const { items: todos, loading, error, updateItem, removeItem } = useCollection('todos');
 
   const todo = todos.find((t) => t.id === todoId);
 
-  function handleSave(values) {
-    updateItem(todoId, values);
-    navigate(-1);
+  async function handleSave(values) {
+    try {
+      await updateItem(todoId, values);
+      navigate(-1);
+    } catch {
+      // error is rendered below; stay on the form so nothing is lost
+    }
   }
 
-  function handleDelete() {
-    removeItem(todoId);
+  // ConfirmDeleteButton awaits this and only closes its dialog on success —
+  // no local try/catch needed here.
+  async function handleDelete() {
+    await removeItem(todoId);
     navigate(-1);
   }
 
@@ -45,6 +52,12 @@ export function TaskDetailPage() {
       >
         Back
       </Button>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>

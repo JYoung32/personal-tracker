@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { storageAdapter } from '../services/storage';
+import { getFriendlyErrorMessage } from '../utils/friendlyError';
 
 /**
  * useCollection
@@ -11,6 +12,14 @@ import { storageAdapter } from '../services/storage';
  * hobby tracker, and purchase order list are all just collections with
  * different item shapes. Each feature calls this hook with its own
  * collection key and gets full CRUD for free.
+ *
+ * Every mutation is wrapped so a failure (network drop, RLS rejection,
+ * unique constraint, ...) sets `error` to a friendly message instead of
+ * becoming a silent no-op or an unhandled rejection — most pages already
+ * render `{error && <Alert>...}`, so this alone surfaces failures
+ * app-wide with no per-page changes. The original error is still
+ * re-thrown so a caller that needs to react (e.g. keep a form open
+ * instead of closing it) can `catch` it.
  *
  * @param {string} collectionKey - e.g. "todos", "hobbies", "purchases"
  *
@@ -30,7 +39,7 @@ export function useCollection(collectionKey) {
       const data = await storageAdapter.getAll(collectionKey);
       setItems(data);
     } catch (err) {
-      setError(err.message || 'Failed to load data');
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -42,26 +51,44 @@ export function useCollection(collectionKey) {
 
   const addItem = useCallback(
     async (item) => {
-      const newItem = await storageAdapter.create(collectionKey, item);
-      setItems((prev) => [...prev, newItem]);
-      return newItem;
+      setError(null);
+      try {
+        const newItem = await storageAdapter.create(collectionKey, item);
+        setItems((prev) => [...prev, newItem]);
+        return newItem;
+      } catch (err) {
+        setError(getFriendlyErrorMessage(err));
+        throw err;
+      }
     },
     [collectionKey]
   );
 
   const updateItem = useCallback(
     async (id, updates) => {
-      const updated = await storageAdapter.update(collectionKey, id, updates);
-      setItems((prev) => prev.map((item) => (item.id === id ? updated : item)));
-      return updated;
+      setError(null);
+      try {
+        const updated = await storageAdapter.update(collectionKey, id, updates);
+        setItems((prev) => prev.map((item) => (item.id === id ? updated : item)));
+        return updated;
+      } catch (err) {
+        setError(getFriendlyErrorMessage(err));
+        throw err;
+      }
     },
     [collectionKey]
   );
 
   const removeItem = useCallback(
     async (id) => {
-      await storageAdapter.remove(collectionKey, id);
-      setItems((prev) => prev.filter((item) => item.id !== id));
+      setError(null);
+      try {
+        await storageAdapter.remove(collectionKey, id);
+        setItems((prev) => prev.filter((item) => item.id !== id));
+      } catch (err) {
+        setError(getFriendlyErrorMessage(err));
+        throw err;
+      }
     },
     [collectionKey]
   );

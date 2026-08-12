@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
+import Alert from '@mui/material/Alert';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import CloseIcon from '@mui/icons-material/Close';
 import { ConfirmDeleteButton } from './ConfirmDeleteButton';
@@ -14,19 +15,31 @@ import { ConfirmDeleteButton } from './ConfirmDeleteButton';
  * edit view, but here the detail page itself already is that view.
  * FormComponent's own submit button renders a Cancel (X) inline next to it
  * (see FormActions) while editing. Pass onDelete to show the red X;
- * without it, only the pencil renders.
+ * without it, only the pencil renders. Pass `error` (the owning
+ * useCollection's error state) to show it above the form while editing —
+ * on a failed save this stays in edit mode instead of silently reverting
+ * to the (unsaved) read-only view.
  */
-export function EditableDetails({ FormComponent, values, onSave, onDelete, deleteLabel, children }) {
+export function EditableDetails({ FormComponent, values, onSave, onDelete, deleteLabel, error, children }) {
   const [editing, setEditing] = useState(false);
 
-  function handleSave(updated) {
-    onSave(updated);
-    setEditing(false);
+  async function handleSave(updated) {
+    try {
+      await onSave(updated);
+      setEditing(false);
+    } catch {
+      // error is rendered below; stay in edit mode so nothing is lost
+    }
   }
 
   if (editing) {
     return (
       <Box sx={{ mb: 5 }}>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
         <FormComponent
           initialValues={values}
           submitLabel="Save"

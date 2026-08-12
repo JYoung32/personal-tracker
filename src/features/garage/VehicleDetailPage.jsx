@@ -21,6 +21,7 @@ export function VehicleDetailPage() {
   const {
     items: vehicles,
     loading: vehiclesLoading,
+    error: vehiclesError,
     updateItem: updateVehicle,
     removeItem: removeVehicle,
   } = useCollection('garageVehicles');
@@ -97,8 +98,10 @@ export function VehicleDetailPage() {
     updateTodo(id, { recurringDay });
   }
 
-  function handleDeleteVehicle() {
-    removeVehicle(vehicleId);
+  // ConfirmDeleteButton (via EditableDetails) awaits this and only closes
+  // its dialog on success — no local try/catch needed here.
+  async function handleDeleteVehicle() {
+    await removeVehicle(vehicleId);
     navigate('/garage');
   }
 
@@ -124,6 +127,7 @@ export function VehicleDetailPage() {
             onSave={(values) => updateVehicle(vehicleId, values)}
             onDelete={handleDeleteVehicle}
             deleteLabel={vehicleLabel}
+            error={vehiclesError}
           >
             <Typography variant="h4" fontWeight={500} align="center" gutterBottom>
               {vehicleTitle}

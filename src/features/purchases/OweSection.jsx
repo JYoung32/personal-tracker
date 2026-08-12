@@ -57,11 +57,11 @@ export function OweSection() {
   );
 
   function handleAmountChange(id, amountOwed) {
-    updateItem(id, { amountOwed });
+    return updateItem(id, { amountOwed });
   }
 
   function handleMonthsLeftChange(id, monthsLeft) {
-    updateItem(id, { monthsLeft });
+    return updateItem(id, { monthsLeft });
   }
 
   return (

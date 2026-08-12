@@ -21,6 +21,12 @@ export function useRecurringReset(items, loading, updateItem) {
         const boundary = currentResetBoundary(t, todayMidnight);
         return boundary && parseDateOnly(t.completedDate) < boundary;
       })
-      .forEach((t) => updateItem(t.id, { completed: false, completedDate: null }));
+      .forEach((t) => {
+        // Runs automatically on load, not from a user action — updateItem
+        // already surfaces a friendly error via the collection's error
+        // state, so just swallow the rethrow here to avoid an unhandled
+        // rejection; a failed auto-reset simply retries next load.
+        updateItem(t.id, { completed: false, completedDate: null }).catch(() => {});
+      });
   }, [items, loading, updateItem]);
 }
