@@ -27,6 +27,9 @@ npm run dev
 Open the printed localhost URL and sign up for an account (or log in if you
 already have one).
 
+Run `npm test` for the automated test suite (Vitest) — see
+[Testing](#testing).
+
 ## Features
 
 - **Overview** — the landing page (click "Personal Tracker" in the nav bar,
@@ -82,9 +85,14 @@ already have one).
 
 ## Project structure
 
+Tests live next to the module they cover, as `*.test.js` (e.g.
+`recurrence.js` + `recurrence.test.js`) — run with `npm test`. See
+[Testing](#testing).
+
 ```
 src/
-  App.jsx                  Routes + top-level providers
+  App.jsx                  Routes (lazy-loaded per-page, Suspense +
+                             ErrorBoundary wrapped) + top-level providers
   theme.js                 MUI theme (colors, shape) — edit freely
   context/
     AuthContext.jsx         Real Supabase Auth — login/signup/logout plus
@@ -99,6 +107,9 @@ src/
                                 now but kept as a reference/fallback
       supabaseAdapter.js       ACTIVE adapter — talks to Postgres, converts
                                 camelCase <-> snake_case generically
+      caseConversion.js        toSnakeCase/toCamelCase, split out so they're
+                                unit-testable without the real Supabase
+                                client (which needs env vars to construct)
       index.js                 Exports the ACTIVE adapter — change this one
                                 file to switch storage backends
   hooks/
@@ -293,6 +304,43 @@ usable to get somewhere else, and navigating away remounts the boundary
 fresh (React's own recommended reset trick, avoiding a `componentDidUpdate`
 `setState` some linters flag).
 
+**Every route is its own lazy chunk.** `App.jsx` wraps each page import in
+`React.lazy` (with a `.then(m => ({ default: m.X }))` step, since every page
+is a named export, not a default one) instead of importing all ~20 upfront.
+A single `Suspense` around `<Routes>` — inside the `ErrorBoundary`, so a
+chunk-load failure is caught the same way a rendering error is — shows a
+centered spinner while a route's own JS is fetched the first time it's
+visited. This is what actually shrinks the initial bundle the earlier
+"~780 kB single chunk" note flagged; each page's own dependencies (MUI
+pieces it alone uses, etc.) now ship only when that page is reached.
+
+**Pure logic and the CRUD hook have automated tests; UI doesn't (yet).**
+`npm test` runs Vitest against `recurrence.js` (reset-boundary math with
+fixed dates — the highest-value, easiest-to-get-wrong logic in the app),
+`caseConversion.js` (`toSnakeCase`/`toCamelCase` round-tripping), and
+`useCollection.js` (mocking `storageAdapter` to verify loading/add/update/
+remove state transitions, including that a failed mutation sets `error` and
+leaves `items` untouched). `useRecurringReset.js` has one too, covering the
+duplicate-update guard described below. These were picked because they're
+pure-logic or hook-only — no component mounting needed, so no UI testing
+library setup (beyond `@testing-library/react`'s `renderHook`) was required
+to get real value. Component/page-level tests aren't set up; add
+`@testing-library/react`'s `render`/`screen` alongside `renderHook` if that
+becomes worth it later.
+
+**`useRecurringReset` guards against sending the same reset twice.** Its
+effect depends on `items`, which changes on *any* add/update/remove on the
+page — not just recurrence-related ones — so a second run can start while
+an earlier `updateItem` call for the same item is still in flight (its
+result hasn't landed back in `items` yet, so the item still looks "due" to
+the next run). A `Set` of in-progress ids (in a `ref`, so it survives
+re-renders without itself triggering one) is populated before each batch of
+`updateItem` calls and cleared as each settles, so a re-run skips anything
+already being reset. This doesn't merge multiple due items into one network
+call — Supabase has no single-request "update N rows with N different
+values" primitive without a custom RPC — it only prevents the same item
+from being submitted more than once concurrently.
+
 **Nav-bar hover dropdowns use plain CSS `:hover`, not MUI `Menu`.** An
 earlier attempt with `Menu` flickered because its modal overlay renders on
 top of the trigger button once open, which makes the browser think the
@@ -325,6 +373,15 @@ through to the DOM instead of reaching the native `<input>`. Use
 `slotProps={{ htmlInput: { min: 0 } }}` instead (see `OweItemForm.jsx` /
 `OweItemRow.jsx`). Same idea as the earlier `Menu`
 `MenuListProps` → `slotProps={{ list: {...} }}` fix.
+
+## Testing
+
+`npm test` runs the Vitest suite once (`npm run` doesn't watch by default —
+add `-- --watch` if you want it to). Covered so far: `utils/recurrence.js`,
+`services/storage/caseConversion.js`, `hooks/useCollection.js`, and
+`hooks/useRecurringReset.js` — see the "Why it's built this way" notes above
+for what each one asserts and why those four were picked first. No
+component/page tests yet.
 
 ## Deployment
 
@@ -380,22 +437,6 @@ re-deriving context.
 **Suggested priority: Next, before adding more surface area.** The codebase
 is clean today — these keep it that way as it grows.
 
-- **Code-split routes with `React.lazy`.** `App.jsx` eagerly imports all
-  ~20 page components, contributing to the ~780 kB single-chunk bundle
-  your own README already flags. Wrap each route element in
-  `React.lazy`/`Suspense` — straightforward, isolated change per route.
-- **Add automated tests**, starting with pure-logic modules that don't need
-  UI mounting:
-  - `utils/recurrence.js` (`currentResetBoundary`, `firstResetDate`) —
-    highest value, easy to get wrong, easy to test with fixed dates.
-  - `useCollection.js` — mock the adapter, verify add/update/remove state
-    transitions.
-  - `supabaseAdapter.js`'s `toSnakeCase`/`toCamelCase` round-tripping.
-- **Fix `useRecurringReset` redundant-update potential.** It re-runs on
-  every `items` reference change (any add/update/remove on the page, not
-  just recurrence-related ones), and resets recurring items one
-  `updateItem` call at a time instead of batching. Not broken, but worth
-  tightening once tests exist to confirm behavior doesn't regress.
 - **Revisit monthly/yearly interval math.** `FREQUENCY_INTERVAL_DAYS` uses
   fixed `30`/`365` day approximations, which will drift from true calendar
   months/years over time (e.g. a task anchored on the 31st walks backward
@@ -441,3 +482,8 @@ builds on stability work above rather than competing with it.
   suggestion, not a fixed order.
 - **Error Handling & Reliability is done** (see "Why it's built this way"
   above for how) — pruned from this list rather than left checked off.
+- **Route code-splitting, the initial test suite, and the
+  `useRecurringReset` duplicate-update guard are done** (see "Why it's
+  built this way" above and [Testing](#testing)) — pruned from Technical /
+  Architecture Improvements above; interval-math accuracy and a native
+  wrapper are the only items still open there.

@@ -11,14 +11,7 @@
  * here.
  */
 import { supabase } from '../supabase/client';
-
-function toSnakeCase(key) {
-  return key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
-}
-
-function toCamelCase(key) {
-  return key.replace(/_([a-z0-9])/g, (_, letter) => letter.toUpperCase());
-}
+import { toSnakeCase, toCamelCase } from './caseConversion';
 
 function rowToItem(row) {
   const item = {};

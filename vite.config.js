@@ -32,4 +32,7 @@ export default defineConfig(({ command }) => ({
       },
     }),
   ],
+  test: {
+    environment: 'jsdom',
+  },
 }))

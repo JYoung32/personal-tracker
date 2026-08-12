@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { currentResetBoundary, parseDateOnly } from '../utils/recurrence';
 
 /**
@@ -12,21 +12,35 @@ import { currentResetBoundary, parseDateOnly } from '../utils/recurrence';
  * open.
  */
 export function useRecurringReset(items, loading, updateItem) {
+  // This effect re-runs on every `items` reference change, including
+  // unrelated add/update/remove calls elsewhere on the page — the async
+  // updateItem below hasn't landed back in `items` yet when that happens,
+  // so without this guard the same due item could be sent to updateItem
+  // more than once concurrently. Tracks ids currently being reset so a
+  // re-run skips them instead of re-submitting.
+  const resettingIds = useRef(new Set());
+
   useEffect(() => {
     if (loading) return;
     const todayMidnight = new Date(new Date().toDateString());
-    items
-      .filter((t) => t.completed && t.completedDate)
+    const due = items
+      .filter((t) => t.completed && t.completedDate && !resettingIds.current.has(t.id))
       .filter((t) => {
         const boundary = currentResetBoundary(t, todayMidnight);
         return boundary && parseDateOnly(t.completedDate) < boundary;
-      })
-      .forEach((t) => {
-        // Runs automatically on load, not from a user action — updateItem
-        // already surfaces a friendly error via the collection's error
-        // state, so just swallow the rethrow here to avoid an unhandled
-        // rejection; a failed auto-reset simply retries next load.
-        updateItem(t.id, { completed: false, completedDate: null }).catch(() => {});
       });
+
+    if (due.length === 0) return;
+
+    due.forEach((t) => resettingIds.current.add(t.id));
+    due.forEach((t) => {
+      // Runs automatically on load, not from a user action — updateItem
+      // already surfaces a friendly error via the collection's error
+      // state, so just swallow the rethrow here to avoid an unhandled
+      // rejection; a failed auto-reset simply retries next load.
+      updateItem(t.id, { completed: false, completedDate: null })
+        .catch(() => {})
+        .finally(() => resettingIds.current.delete(t.id));
+    });
   }, [items, loading, updateItem]);
 }
