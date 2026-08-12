@@ -39,8 +39,17 @@ export function TodoBoard({
 }) {
   const [showForm, setShowForm] = useState(false);
   const panelRef = useRef(null);
-  const { filter, setFilter, frequencyFilter, setFrequencyFilter, filteredTodos, completedCount } =
-    useTodoFilters(todos);
+  const {
+    filter,
+    setFilter,
+    frequencyFilter,
+    setFrequencyFilter,
+    tagFilter,
+    setTagFilter,
+    availableTags,
+    filteredTodos,
+    completedCount,
+  } = useTodoFilters(todos);
 
   return (
     <Container maxWidth="sm" sx={{ py: 8 }}>
@@ -93,7 +102,7 @@ export function TodoBoard({
         ))}
       </Tabs>
 
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
         <Select
           value={frequencyFilter}
           onChange={(e) => setFrequencyFilter(e.target.value)}
@@ -106,6 +115,25 @@ export function TodoBoard({
             </MenuItem>
           ))}
         </Select>
+
+        {availableTags.length > 0 && (
+          <Select
+            value={tagFilter}
+            onChange={(e) => setTagFilter(e.target.value)}
+            variant="standard"
+            displayEmpty
+            sx={{ minWidth: 120, fontSize: 14 }}
+          >
+            <MenuItem value="all" sx={{ fontSize: 14 }}>
+              All tags
+            </MenuItem>
+            {availableTags.map((tag) => (
+              <MenuItem key={tag} value={tag} sx={{ fontSize: 14 }}>
+                {tag}
+              </MenuItem>
+            ))}
+          </Select>
+        )}
       </Box>
 
       <Divider sx={{ mb: 1 }} />

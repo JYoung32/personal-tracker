@@ -41,7 +41,10 @@ Run `npm test` for the automated test suite (Vitest) — see
   priority, frequency — daily/weekly/monthly/quarterly/yearly). Recurring
   tasks auto-uncheck on a fixed schedule anchored to when the task was
   created (see `utils/recurrence.js`), optionally aligned to a day of the
-  week for the first reset. Click a task to open a full edit view.
+  week for the first reset. Click a task to open a full edit view. Any task
+  (plain or entity-linked — maintenance, hobby task, ...) can also carry
+  free-form tags, filterable via a "Tags" dropdown next to the frequency
+  filter, independent of the vehicle/firearm/hobby linking described below.
 - **Hobbies** — a hobby's page has a pencil-editable name/description, a
   "Hobby Tasks" section (real to-dos, generated right there, defaulting to
   One-Time frequency instead of Daily), and a "Lists" section where you
@@ -125,6 +128,8 @@ src/
                                Modifications/Wishlist/Equipment)
   utils/
     recurrence.js              Date-only parsing + reset-schedule math
+    tags.js                    normalizeTags — trims/dedupes a todo's
+                               free-form tag list (see TodoForm)
   features/
     overview/                 OverviewPage — the full, cross-tab task list
     todos/                    TodoPage (scoped to its own tasks), TodoBoard
@@ -156,10 +161,11 @@ supabase/
   migrations/                 The schema, in order — 001 creates every
                               table with "allow all" RLS, 002 adds owner-
                               scoped RLS + the profiles table + its
-                              trigger. Every statement is safe to re-run
-                              (Supabase's GitHub integration replays these
-                              against preview branches cloned from
-                              production, which already has them applied)
+                              trigger, 003 adds todos.tags. Every statement
+                              is safe to re-run (Supabase's GitHub
+                              integration replays these against preview
+                              branches cloned from production, which
+                              already has them applied)
 public/
   404.html                    GitHub Pages SPA-routing redirect (see
                               Deployment)
@@ -247,12 +253,29 @@ add form — so creating a task always happens on the tab that owns it, while
 Overview stays a pure read-through.
 
 **A hobby's "maintenance-type list" tasks and its own "Hobby Tasks" are
-both just `todos`, distinguished by tags.** A task belongs to a hobby
-directly if it has `hobbyId` but no `hobbyListId`; it belongs to one of the
-hobby's Maintenance-type lists if it has both. Garage/Armory maintenance
-tasks follow the same tagging idea with `vehicleId`/`armoryItemId` (there's
-only ever one Maintenance list per vehicle/firearm, so no extra list-id tag
-is needed there).
+both just `todos`, distinguished by which id fields are set.** A task
+belongs to a hobby directly if it has `hobbyId` but no `hobbyListId`; it
+belongs to one of the hobby's Maintenance-type lists if it has both.
+Garage/Armory maintenance tasks follow the same idea with
+`vehicleId`/`armoryItemId` (there's only ever one Maintenance list per
+vehicle/firearm, so no extra list-id field is needed there).
+
+**Free-form tags are a separate, simpler mechanism layered on top of that
+entity-linking scheme, not a replacement for it.** `todos.tags` is a plain
+Postgres `text[]` (migration 003) — no join table, no per-tag row, since
+tags are arbitrary user text with no fixed set at this scale. `TodoForm`
+collects them with an `Autocomplete` in `freeSolo`+`multiple` mode (chips,
+no suggestion list — see its own comment for why suggestions were skipped)
+and normalizes them through `utils/tags.js`'s `normalizeTags` before
+`onSubmit` (trim, drop empties, case-insensitive dedupe) so casing/typo
+variants don't each become their own filter option.
+`useTodoFilters.availableTags` derives the filter dropdown's options
+straight from whatever tags are actually present in the current `todos`
+list — no separate "list all tags" query. Because `tags` lives on the same
+`todos` row as `vehicleId`/`hobbyId`/etc., an entity-linked task (a
+maintenance item, a hobby task) can carry free-form tags too, exactly like
+a plain to-do — `TaskDetailPage` reuses `TodoForm` for every task
+regardless of origin, so this needed no extra wiring.
 
 **Auth is real Supabase Auth (email/password).** `AuthContext.jsx` restores
 whatever session Supabase already persisted on load, then stays in sync via
@@ -378,10 +401,10 @@ through to the DOM instead of reaching the native `<input>`. Use
 
 `npm test` runs the Vitest suite once (`npm run` doesn't watch by default —
 add `-- --watch` if you want it to). Covered so far: `utils/recurrence.js`,
-`services/storage/caseConversion.js`, `hooks/useCollection.js`, and
-`hooks/useRecurringReset.js` — see the "Why it's built this way" notes above
-for what each one asserts and why those four were picked first. No
-component/page tests yet.
+`utils/tags.js`, `services/storage/caseConversion.js`,
+`hooks/useCollection.js`, `hooks/useRecurringReset.js`, and
+`features/todos/useTodoFilters.js` — see the "Why it's built this way"
+notes above for what each one asserts. No component/page tests yet.
 
 ## Deployment
 
@@ -457,9 +480,6 @@ builds on stability work above rather than competing with it.
   most-active hobby, upcoming maintenance across Garage/Armory. The
   aggregation plumbing already exists (Overview reads the full cross-tab
   list); this is mostly a display layer on top.
-- **Tags or free-form categorization** on top of the existing hobby/vehicle/
-  firearm tagging scheme, so to-dos not tied to a specific entity can still
-  be grouped (e.g. "home," "work").
 - **Search across collections** — likely a client-side filter first, given
   data volume is personal-scale; revisit if it ever needs to be
   server-side.
@@ -487,3 +507,5 @@ builds on stability work above rather than competing with it.
   built this way" above and [Testing](#testing)) — pruned from Technical /
   Architecture Improvements above; interval-math accuracy and a native
   wrapper are the only items still open there.
+- **Free-form tags on to-dos are done** (see "Why it's built this way"
+  above) — pruned from Feature Builds above.

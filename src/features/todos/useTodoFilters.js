@@ -17,6 +17,12 @@ const PRIORITY_RANK = { high: 0, medium: 1, low: 2 };
 export function useTodoFilters(todos) {
   const [filter, setFilter] = useState(FILTERS.ALL);
   const [frequencyFilter, setFrequencyFilter] = useState('all');
+  const [tagFilter, setTagFilter] = useState('all');
+
+  const availableTags = useMemo(
+    () => Array.from(new Set(todos.flatMap((t) => t.tags ?? []))).sort((a, b) => a.localeCompare(b)),
+    [todos]
+  );
 
   const filteredTodos = useMemo(() => {
     const sorted = [...todos].sort((a, b) => {
@@ -40,10 +46,21 @@ export function useTodoFilters(todos) {
     if (filter === FILTERS.ACTIVE) result = result.filter((t) => !t.completed);
     if (filter === FILTERS.COMPLETED) result = result.filter((t) => t.completed);
     if (frequencyFilter !== 'all') result = result.filter((t) => t.frequency === frequencyFilter);
+    if (tagFilter !== 'all') result = result.filter((t) => (t.tags ?? []).includes(tagFilter));
     return result;
-  }, [todos, filter, frequencyFilter]);
+  }, [todos, filter, frequencyFilter, tagFilter]);
 
   const completedCount = useMemo(() => todos.filter((t) => t.completed).length, [todos]);
 
-  return { filter, setFilter, frequencyFilter, setFrequencyFilter, filteredTodos, completedCount };
+  return {
+    filter,
+    setFilter,
+    frequencyFilter,
+    setFrequencyFilter,
+    tagFilter,
+    setTagFilter,
+    availableTags,
+    filteredTodos,
+    completedCount,
+  };
 }

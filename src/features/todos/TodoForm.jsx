@@ -4,6 +4,8 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
+import Autocomplete from '@mui/material/Autocomplete';
+import Chip from '@mui/material/Chip';
 import {
   FREQUENCY_OPTIONS,
   PRIORITY_OPTIONS,
@@ -13,14 +15,15 @@ import {
   supportsRecurringDay,
 } from '../../constants/taskOptions';
 import { FormActions } from '../../components/common/FormActions';
+import { normalizeTags } from '../../utils/tags';
 
 /**
  * Form for adding or editing a to-do. Calls onSubmit({ text, description, dueDate, frequency,
- * recurringDay, priority }). In "add" mode (no initialValues) it clears itself after submit.
- * Pass initialValues (an existing todo) to prefill for editing — completed/completedDate aren't
- * part of the form and are left untouched by the caller's merge. Pass onCancel to get a Cancel
- * (X) button inline next to the submit button (see FormActions) — used when this form is inside
- * an AddFormPanel add flow; omitted for standalone edit views like TaskDetailPage.
+ * recurringDay, priority, tags }). In "add" mode (no initialValues) it clears itself after
+ * submit. Pass initialValues (an existing todo) to prefill for editing — completed/completedDate
+ * aren't part of the form and are left untouched by the caller's merge. Pass onCancel to get a
+ * Cancel (X) button inline next to the submit button (see FormActions) — used when this form is
+ * inside an AddFormPanel add flow; omitted for standalone edit views like TaskDetailPage.
  */
 export function TodoForm({ initialValues, onSubmit, submitLabel = 'Add', onCancel }) {
   const [text, setText] = useState(initialValues?.text ?? '');
@@ -29,6 +32,7 @@ export function TodoForm({ initialValues, onSubmit, submitLabel = 'Add', onCance
   const [frequency, setFrequency] = useState(initialValues?.frequency ?? DEFAULT_FREQUENCY);
   const [recurringDay, setRecurringDay] = useState(initialValues?.recurringDay ?? '');
   const [priority, setPriority] = useState(initialValues?.priority ?? DEFAULT_PRIORITY);
+  const [tags, setTags] = useState(initialValues?.tags ?? []);
 
   const showRecurringDay = supportsRecurringDay(frequency);
 
@@ -49,6 +53,7 @@ export function TodoForm({ initialValues, onSubmit, submitLabel = 'Add', onCance
       frequency,
       recurringDay: showRecurringDay && recurringDay !== '' ? recurringDay : null,
       priority,
+      tags: normalizeTags(tags),
     });
 
     if (!initialValues) {
@@ -58,6 +63,7 @@ export function TodoForm({ initialValues, onSubmit, submitLabel = 'Add', onCance
       setFrequency(DEFAULT_FREQUENCY);
       setRecurringDay('');
       setPriority(DEFAULT_PRIORITY);
+      setTags([]);
     }
   }
 
@@ -215,6 +221,36 @@ export function TodoForm({ initialValues, onSubmit, submitLabel = 'Add', onCance
           </Select>
         </Box>
       )}
+
+      <Box>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          component="label"
+          htmlFor="todo-tags"
+          align="center"
+          sx={{ display: 'block', mb: 0.5 }}
+        >
+          Tags (optional)
+        </Typography>
+        <Autocomplete
+          id="todo-tags"
+          multiple
+          freeSolo
+          options={[]}
+          value={tags}
+          onChange={(_, newValue) => setTags(newValue)}
+          renderTags={(value, getTagProps) =>
+            value.map((tag, index) => {
+              const { key, ...chipProps } = getTagProps({ index });
+              return <Chip key={key} label={tag} size="small" {...chipProps} />;
+            })
+          }
+          renderInput={(params) => (
+            <TextField {...params} variant="standard" placeholder="Type a tag, press Enter" />
+          )}
+        />
+      </Box>
 
       <Box sx={{ textAlign: 'center', mt: 3 }}>
         <FormActions submitLabel={submitLabel} onCancel={onCancel} />
