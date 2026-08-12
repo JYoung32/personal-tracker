@@ -15,9 +15,9 @@ function rowToProfile(row) {
 /**
  * The user's profile — username, first/last name — one row per auth user
  * in the `profiles` table (auto-created on signup, see
- * supabase/migrations/002_add_user_ownership_and_profiles.sql).
- * Unlike useCollection this isn't a list, so it manages its own single-row
- * fetch/update against Supabase directly.
+ * supabase/migrations/001_initial_schema.sql). Unlike useCollection this
+ * isn't a list, so it manages its own single-row fetch/update against
+ * Supabase directly.
  */
 export function useProfile() {
   const { user } = useAuth();

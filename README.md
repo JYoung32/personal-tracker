@@ -9,10 +9,11 @@ GitHub Actions on every push to `master` — see [Deployment](#deployment).
 
 ## Getting started
 
-1. Create a Supabase project, then in its SQL Editor run each file under
-   [`supabase/migrations/`](supabase/migrations) in order (`001`, then
-   `002`, ...). If you're catching an existing project up, just run
-   whichever ones are new — they're all safe to re-run.
+1. Create a Supabase project, then in its SQL Editor run
+   [`supabase/migrations/001_initial_schema.sql`](supabase/migrations/001_initial_schema.sql)
+   — the whole schema in one file. Safe to re-run against an
+   already-migrated database too (every statement is a no-op if it's
+   already applied).
 2. Copy `.env.example` to `.env.local` and fill in your project's URL and
    anon key (Project Settings > API in the Supabase dashboard).
 3. In the Supabase dashboard under Authentication > URL Configuration, add
@@ -132,6 +133,9 @@ src/
     recurrence.js              Date-only parsing + reset-schedule math
     tags.js                    normalizeTags — trims/dedupes a todo's
                                free-form tag list (see TodoForm)
+    friendlyError.js           getFriendlyErrorMessage — maps a thrown
+                               error (network/RLS/constraint) to a short
+                               user-facing message, used by useCollection
   features/
     overview/                 OverviewPage — the full, cross-tab task list
     todos/                    TodoPage (scoped to its own tasks), TodoBoard
@@ -140,7 +144,8 @@ src/
                                logic), TodoForm, TodoList, TodoItem,
                                TaskDetailPage
     hobbies/                  HobbiesPage, HobbyDetailPage (tasks + tabbed
-                               lists), HobbyListForm, HobbyListEntryDetailPage
+                               lists), HobbyForm, HobbyListForm,
+                               HobbyListEntryDetailPage
     garage/                   GaragePage (vehicles + page-level Wishlist),
                                VehicleForm, VehicleDetailPage (tabbed
                                Maintenance/Modifications/Wishlist),
@@ -160,17 +165,18 @@ src/
     common/
       Shared building blocks reused across features — see below.
 supabase/
-  migrations/                 The schema, in order — 001 creates every
-                              table (RLS enabled, no policy — see its own
-                              header for why), 002 adds owner-scoped RLS +
-                              the profiles table + its trigger, 003 adds
-                              todos.tags, 004 is a one-time cleanup for a
-                              data-isolation incident (see its header), 005
-                              adds notes to garage_vehicles/armory_items.
-                              Every statement is safe to re-run (Supabase's
-                              GitHub integration replays these against
-                              preview branches cloned from production,
-                              which already has them applied)
+  migrations/                 001_initial_schema.sql — the whole schema:
+                              every table, owner-scoped RLS from creation,
+                              the profiles table + its trigger, todos.tags,
+                              the two notes columns. Was four separate
+                              incremental migrations at one point; folded
+                              back into one file now that they're all long
+                              since applied to production (see its own
+                              header, and "Why it's built this way" below,
+                              for the history). Every statement is safe to
+                              re-run (Supabase's GitHub integration replays
+                              this against preview branches cloned from
+                              production, which already has it applied)
 public/
   404.html                    GitHub Pages SPA-routing redirect (see
                               Deployment)
@@ -214,6 +220,10 @@ public/
 - **Reusable forms**: `SingleFieldForm` (one text field), `SimpleItemForm`
   + `SimpleItemDetailPage` (name + detail, used for modifications/wishlist
   items), `MaintenanceTaskForm`.
+- **Navigation/error chrome**: `BackLink` is the "‹ Back to X" link every
+  detail page opens with. `ErrorBoundary` wraps `<Routes>` in `App.jsx` (see
+  "Why it's built this way") — not itself part of a page's own UI, but the
+  fallback every page falls back to if it crashes.
 - Every add/edit form follows the same convention:
   `{ initialValues, onSubmit, submitLabel }` — omit `initialValues` for
   "add" mode (the form clears itself after submit), pass an existing record
@@ -244,21 +254,24 @@ row-level-security policy restricting all access to `auth.uid() = user_id`.
 That's what actually enforces "separate accounts see separate data" — it
 holds even against direct API calls, not just what the UI happens to show.
 
-**`001_initial_schema.sql` never creates a permissive policy, even
-temporarily — it only ever `DROP`s one.** It used to create an "allow all"
-policy per table for the pre-Auth era, which caused a real incident: Postgres
-OR's multiple *permissive* policies on the same table together, so if 001
-was ever re-run against a database that already had 002's owner-only
-policies applied, "allow all" got silently reinstated alongside them and
-undid the isolation guarantee above — with no error, since both the create
-and the drop-then-create were individually valid SQL. 001 now only enables
-RLS and drops that policy name if found; 002 is what actually grants any
-access at all. Fixed going forward in 001, with 004 as the one-time cleanup
-for a database that already had the stale policy. The lesson generalizes:
-"safe to re-run" isn't the same as "safe regardless of what already ran
-after it" — a migration that recreates a policy/grant needs to consider
-what a *later* migration may have already tightened, not just what an
-*earlier* one left behind.
+**`001_initial_schema.sql` never creates a permissive policy — it only
+ever `DROP`s one, defensively.** An earlier version of this schema (back
+when it was split across several migrations) created a temporary "allow
+all" policy per table for the pre-Auth era, which caused a real incident:
+Postgres OR's multiple *permissive* policies on the same table together,
+so when the "allow all"-creating migration was re-run against a database
+that already had the later owner-only-policy migration applied, "allow
+all" got silently reinstated alongside it and undid the isolation
+guarantee above — with no error, since both migrations were individually
+valid, idempotent SQL. The lesson: "safe to re-run" isn't the same as
+"safe regardless of what already ran after it" — a migration that
+(re-)creates a policy/grant needs to consider what a *later* migration may
+have already tightened, not just what an *earlier* one left behind. Now
+that everything is one file, table creation and its owner-only policy
+happen together, so this specific failure mode can't recur — but each
+table below still has a `drop policy if exists "allow all - X"` line
+(a no-op today) as cheap, permanent insurance against the same policy name
+ever being reintroduced by something else.
 
 **Lists share one hook.** Todos, hobbies/hobby lists/list entries, vehicles,
 firearms, modifications, and wishlist items are all just "collections" with
@@ -283,7 +296,7 @@ vehicle/firearm, so no extra list-id field is needed there).
 
 **Free-form tags are a separate, simpler mechanism layered on top of that
 entity-linking scheme, not a replacement for it.** `todos.tags` is a plain
-Postgres `text[]` (migration 003) — no join table, no per-tag row, since
+Postgres `text[]` — no join table, no per-tag row, since
 tags are arbitrary user text with no fixed set at this scale. `TodoForm`
 collects them with an `Autocomplete` in `freeSolo`+`multiple` mode (chips,
 no suggestion list — see its own comment for why suggestions were skipped)
@@ -298,8 +311,8 @@ maintenance item, a hobby task) can carry free-form tags too, exactly like
 a plain to-do — `TaskDetailPage` reuses `TodoForm` for every task
 regardless of origin, so this needed no extra wiring.
 
-**Only `GarageVehicle`/`ArmoryItem` got a dedicated `notes` field (migration
-005) — nowhere else did.** Every other entity with a detail page already
+**Only `GarageVehicle`/`ArmoryItem` got a dedicated `notes` field —
+nowhere else did.** Every other entity with a detail page already
 had an equivalent freeform text box (`SimpleItemForm`'s `detail` field for
 modifications/wishlist items/hobby list entries; `description` on
 `OweItem`/`WishToPurchaseItem`/`Hobby`) before this was added — giving
@@ -308,8 +321,8 @@ element with no distinct purpose. Vehicles and firearms were the only two
 with no freeform field at all (just make/model/trim-or-caliber/color), so
 that's the one real gap this closes. If a future field is genuinely
 distinct from an entity's existing freeform text (e.g. actual file
-attachments — see Next steps), that's a different feature, not more of
-this one.
+attachments — see the Roadmap's Feature Builds section below), that's a
+different feature, not more of this one.
 
 **Auth is real Supabase Auth (email/password).** `AuthContext.jsx` restores
 whatever session Supabase already persisted on load, then stays in sync via
@@ -317,7 +330,7 @@ whatever session Supabase already persisted on load, then stays in sync via
 session created when a "Forgot password?" link is clicked).
 `ProtectedRoute` just checks `isAuthenticated`, unchanged from before the
 swap. New accounts get a blank `profiles` row automatically via a Postgres
-trigger (`handle_new_user`, see `supabase/migrations/002_add_user_ownership_and_profiles.sql`)
+trigger (`handle_new_user`, see `supabase/migrations/001_initial_schema.sql`)
 — the app never has to create it.
 
 **Username is optional and separate from the login identity.** Supabase
@@ -327,12 +340,12 @@ a unique constraint at the database level so two accounts can't collide.
 
 **Every migration must be safe to re-run.** Supabase's GitHub integration
 replays every file in `supabase/migrations/` against preview branches
-cloned from production — which already has all of them applied — so a
-plain `CREATE TABLE`/`ALTER TABLE ... ADD COLUMN`/`CREATE POLICY` errors
-there even though it's a no-op. Every migration in this repo guards with
-`IF NOT EXISTS`/`IF EXISTS`/`OR REPLACE` (or, for the one-time backfill in
-002, checks whether there's actually anything to backfill before doing
-anything). Write new migrations the same way.
+cloned from production — which already has it applied — so a plain
+`CREATE TABLE`/`ALTER TABLE ... ADD COLUMN`/`CREATE POLICY` errors there
+even though it's a no-op. `001_initial_schema.sql` guards with `IF NOT
+EXISTS`/`IF EXISTS`/`OR REPLACE` throughout (the `profiles` backfill at
+the bottom is idempotent by construction instead — it only inserts rows
+for users that still lack one). Write new migrations the same way.
 
 **Mutation failures surface through one choke point, not per-page
 plumbing.** `useCollection.js`'s `addItem`/`updateItem`/`removeItem` catch
@@ -367,9 +380,9 @@ is a named export, not a default one) instead of importing all ~20 upfront.
 A single `Suspense` around `<Routes>` — inside the `ErrorBoundary`, so a
 chunk-load failure is caught the same way a rendering error is — shows a
 centered spinner while a route's own JS is fetched the first time it's
-visited. This is what actually shrinks the initial bundle the earlier
-"~780 kB single chunk" note flagged; each page's own dependencies (MUI
-pieces it alone uses, etc.) now ship only when that page is reached.
+visited. Before this, every page was eagerly bundled into one ~780 kB
+chunk; each page's own dependencies (MUI pieces it alone uses, etc.) now
+ship only when that page is actually reached.
 
 **Pure logic and the CRUD hook have automated tests; UI doesn't (yet).**
 `npm test` runs Vitest against `recurrence.js` (reset-boundary math with
@@ -495,14 +508,6 @@ under `/personal-tracker/`. Fixed with
 env var already used for the password-reset redirect above, so it's `/`
 locally and `/personal-tracker/` in production automatically.
 
-## Next steps (suggested order)
-
-1. The production bundle is ~780 kB (one chunk, no code-splitting yet) — if
-   load time on mobile networks becomes noticeable, split routes with
-   `React.lazy`/dynamic `import()`.
-2. A true native wrapper (Capacitor) for an actual App Store/Play Store
-   listing, if that's ever wanted over "installs like an app" via the PWA.
-
 # Personal Tracker — Roadmap
 
 Compiled from a 1.0 code review and roadmap discussion (Aug 2026). Organized
@@ -522,8 +527,7 @@ is clean today — these keep it that way as it grows.
   through shorter months). Fine for now — flag for calendar-accurate logic
   if it ever starts to matter in practice.
 - **Consider a native wrapper (Capacitor)** if you ever want actual App
-  Store/Play Store presence beyond "installs like an app" via the PWA —
-  per your own README's next-steps note.
+  Store/Play Store presence beyond "installs like an app" via the PWA.
 
 ---
 
@@ -569,6 +573,11 @@ builds on stability work above rather than competing with it.
 - **Free-form tags on to-dos are done** (see "Why it's built this way"
   above) — pruned from Feature Builds above.
 - **Notes on individual items is partly done**: a `notes` field on Garage
-  vehicles and Armory items (migration 005) — the only two entities that
-  had no equivalent freeform field already (see "Why it's built this way").
-  File attachments are still open, reworded above as its own item.
+  vehicles and Armory items — the only two entities that had no equivalent
+  freeform field already (see "Why it's built this way"). File attachments
+  are still open, reworded above as its own item.
+- **The migrations folder was folded back down to a single
+  `001_initial_schema.sql`** (see its own header and "Why it's built this
+  way" above) — it had grown to five files (four incremental on top of the
+  original), all long since applied to production, so it's back to one
+  file reflecting current state, same as the original schema.sql fold.
