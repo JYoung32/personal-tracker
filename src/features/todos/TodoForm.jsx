@@ -240,9 +240,9 @@ export function TodoForm({ initialValues, onSubmit, submitLabel = 'Add', onCance
           options={[]}
           value={tags}
           onChange={(_, newValue) => setTags(newValue)}
-          renderTags={(value, getTagProps) =>
+          renderValue={(value, getItemProps) =>
             value.map((tag, index) => {
-              const { key, ...chipProps } = getTagProps({ index });
+              const { key, ...chipProps } = getItemProps({ index });
               return <Chip key={key} label={tag} size="small" {...chipProps} />;
             })
           }

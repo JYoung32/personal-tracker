@@ -413,7 +413,12 @@ does not recognize the `inputProps` prop" console error here — it leaks
 through to the DOM instead of reaching the native `<input>`. Use
 `slotProps={{ htmlInput: { min: 0 } }}` instead (see `OweItemForm.jsx` /
 `OweItemRow.jsx`). Same idea as the earlier `Menu`
-`MenuListProps` → `slotProps={{ list: {...} }}` fix.
+`MenuListProps` → `slotProps={{ list: {...} }}` fix — and again with
+`Autocomplete`'s `renderTags`, renamed to `renderValue` in this version
+(different callback signature too: `getItemProps` instead of
+`getTagProps`) — the old prop name silently falls through to the DOM
+instead of erroring at build time, so this one only shows up as a browser
+console warning (see `TodoForm.jsx`'s tag input).
 
 ## Testing
 
