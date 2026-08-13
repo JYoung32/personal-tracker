@@ -79,7 +79,16 @@ export function NavBar() {
             <IconButton
               color="inherit"
               aria-label="Open menu"
-              onClick={() => setMobileOpen(true)}
+              onClick={(e) => {
+                // The Drawer's Modal marks #root aria-hidden once open —
+                // this button lives inside #root (the Drawer itself
+                // portals outside it), so without an explicit blur it
+                // stays focused inside a now-hidden subtree, which
+                // Chrome flags as an aria-hidden-on-focused-element
+                // accessibility violation in the console.
+                e.currentTarget.blur();
+                setMobileOpen(true);
+              }}
               sx={{ display: { xs: 'inline-flex', md: 'none' } }}
             >
               <MenuIcon />
