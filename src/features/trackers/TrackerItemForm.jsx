@@ -7,6 +7,8 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import { FormActions } from '../../components/common/FormActions';
+import { TagsInput } from '../../components/common/TagsInput';
+import { normalizeTags } from '../../utils/tags';
 
 // A text/number/date/select field's value is always a string (even
 // type="number" inputs report e.target.value as a string), so "empty"
@@ -33,7 +35,7 @@ function isEmptyValue(value) {
  * (a Select populated from the field's `selectOptions`). `itemNameLabel`
  * is the tracker type's own `item_name_label` (see TrackerTypeForm's
  * docstring) — just relabels the Title field for this type, still
- * submitted as `title`. Calls onSubmit({ title, fieldValues, notes });
+ * submitted as `title`. Calls onSubmit({ title, fieldValues, notes, tags });
  * fieldValues only includes keys for fields the user actually filled in
  * (booleans are the exception — false is a real answer, not "empty", so
  * it's always included). In "add" mode (no initialValues) it clears
@@ -50,6 +52,7 @@ export function TrackerItemForm({
   const [title, setTitle] = useState(initialValues?.title ?? '');
   const [fieldValues, setFieldValues] = useState(initialValues?.fieldValues ?? {});
   const [notes, setNotes] = useState(initialValues?.notes ?? '');
+  const [tags, setTags] = useState(initialValues?.tags ?? []);
 
   function handleFieldChange(fieldId, value) {
     setFieldValues((prev) => ({ ...prev, [fieldId]: value }));
@@ -79,12 +82,14 @@ export function TrackerItemForm({
       title: trimmedTitle,
       fieldValues: cleanedFieldValues,
       notes: notes.trim() || null,
+      tags: normalizeTags(tags),
     });
 
     if (!initialValues) {
       setTitle('');
       setFieldValues({});
       setNotes('');
+      setTags([]);
     }
   }
 
@@ -193,6 +198,8 @@ export function TrackerItemForm({
           fullWidth
         />
       </Box>
+
+      <TagsInput id="tracker-item-tags" value={tags} onChange={setTags} />
 
       <Box sx={{ textAlign: 'center', mt: 1 }}>
         <FormActions submitLabel={submitLabel} onCancel={onCancel} />

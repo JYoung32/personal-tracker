@@ -11,6 +11,7 @@ import { toggleCompletionFields } from '../../utils/recurrence';
 import { supportsRecurringDay, supportsRecurringWeekOfMonth } from '../../constants/taskOptions';
 import { isKnownHobbyListType } from '../../constants/hobbyListTypes';
 import { MaintenanceSection } from '../../components/common/MaintenanceSection';
+import { TagChipRow } from '../../components/common/TagChipRow';
 import { SimpleListSection } from '../../components/common/SimpleListSection';
 import { RelatedListTabs } from '../../components/common/RelatedListTabs';
 import { AddFormPanel } from '../../components/common/AddFormPanel';
@@ -203,6 +204,9 @@ export function HobbyDetailPage() {
                 {hobby.description}
               </Typography>
             )}
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <TagChipRow tags={hobby.tags} />
+            </Box>
           </EditableDetails>
 
           <MaintenanceSection

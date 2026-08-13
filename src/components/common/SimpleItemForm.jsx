@@ -3,17 +3,22 @@ import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { FormActions } from './FormActions';
+import { TagsInput } from './TagsInput';
+import { normalizeTags } from '../../utils/tags';
 
 /**
  * Form for editing a simple list item (a modification or wishlist entry):
  * its name plus a longer optional detail/notes field. Calls
- * onSubmit({ text, detail }). Pass initialValues (an existing item) to
+ * onSubmit({ text, detail, tags }). Pass initialValues (an existing item) to
  * prefill for editing. Pass onCancel to get a circular X inline next to
- * the submit button (see FormActions).
+ * the submit button (see FormActions). Tags are only editable here, not on
+ * the quick-add form (SingleFieldForm) that creates these entries — same
+ * existing pattern `detail` already follows.
  */
 export function SimpleItemForm({ initialValues, onSubmit, submitLabel = 'Save', onCancel }) {
   const [text, setText] = useState(initialValues?.text ?? '');
   const [detail, setDetail] = useState(initialValues?.detail ?? '');
+  const [tags, setTags] = useState(initialValues?.tags ?? []);
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -23,6 +28,7 @@ export function SimpleItemForm({ initialValues, onSubmit, submitLabel = 'Save', 
     onSubmit({
       text: trimmed,
       detail: detail.trim() || null,
+      tags: normalizeTags(tags),
     });
   }
 
@@ -74,6 +80,8 @@ export function SimpleItemForm({ initialValues, onSubmit, submitLabel = 'Save', 
           fullWidth
         />
       </Box>
+
+      <TagsInput id="simple-item-tags" value={tags} onChange={setTags} />
 
       <Box sx={{ textAlign: 'center', mt: 1 }}>
         <FormActions submitLabel={submitLabel} onCancel={onCancel} />

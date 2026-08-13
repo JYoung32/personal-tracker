@@ -5,10 +5,10 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import Chip from '@mui/material/Chip';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import { FREQUENCY_OPTIONS, PRIORITY_OPTIONS, formatRecurringDayLabel } from '../../constants/taskOptions';
 import { ConfirmDeleteButton } from '../../components/common/ConfirmDeleteButton';
+import { TagChipRow } from '../../components/common/TagChipRow';
 
 const FREQUENCY_LABELS = Object.fromEntries(FREQUENCY_OPTIONS.map((opt) => [opt.value, opt.label]));
 
@@ -92,19 +92,7 @@ export function TodoItem({ todo, onToggleComplete, onDelete, onPriorityChange, s
             {metaText}
           </Typography>
         )}
-        {todo.tags?.length > 0 && (
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-            {todo.tags.map((tag) => (
-              <Chip
-                key={tag}
-                label={tag}
-                size="small"
-                variant="outlined"
-                sx={{ height: 20, fontSize: 11, opacity: todo.completed ? 0.6 : 1 }}
-              />
-            ))}
-          </Box>
-        )}
+        <TagChipRow tags={todo.tags} dimmed={todo.completed} />
       </Box>
 
       <Select

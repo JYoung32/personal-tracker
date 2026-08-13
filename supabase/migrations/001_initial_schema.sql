@@ -57,11 +57,17 @@ create table if not exists hobbies (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   description text,
+  tags text[] not null default '{}',
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   created_at timestamptz not null default now(),
   updated_at timestamptz
 );
+-- retroactive-safe for the same reason as tracker_fields.select_options
+-- above — hobbies already exists in production. Free-form tags, extended
+-- here from todos-only (see utils/tags.js / TagsInput / TagChipRow).
+alter table hobbies add column if not exists tags text[] not null default '{}';
 create index if not exists hobbies_user_id_idx on hobbies (user_id);
+create index if not exists hobbies_tags_idx on hobbies using gin (tags);
 alter table hobbies enable row level security;
 drop policy if exists "allow all - hobbies" on hobbies;
 drop policy if exists "owner only - hobbies" on hobbies;
@@ -157,12 +163,18 @@ create table if not exists tracker_items (
   title text not null,
   field_values jsonb not null default '{}',
   notes text,
+  tags text[] not null default '{}',
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   created_at timestamptz not null default now(),
   updated_at timestamptz
 );
+-- retroactive-safe for the same reason as tracker_fields.select_options
+-- above — tracker_items already exists in production. Free-form tags,
+-- extended here from todos-only (see utils/tags.js / TagsInput / TagChipRow).
+alter table tracker_items add column if not exists tags text[] not null default '{}';
 create index if not exists tracker_items_tracker_type_id_idx on tracker_items (tracker_type_id);
 create index if not exists tracker_items_user_id_idx on tracker_items (user_id);
+create index if not exists tracker_items_tags_idx on tracker_items using gin (tags);
 alter table tracker_items enable row level security;
 drop policy if exists "allow all - tracker_items" on tracker_items;
 drop policy if exists "owner only - tracker_items" on tracker_items;
@@ -249,12 +261,19 @@ create table if not exists hobby_list_entries (
   hobby_list_id uuid not null references hobby_lists(id) on delete cascade,
   text text not null,
   detail text,
+  tags text[] not null default '{}',
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   created_at timestamptz not null default now(),
   updated_at timestamptz
 );
+-- retroactive-safe for the same reason as tracker_fields.select_options
+-- above — hobby_list_entries already exists in production. Free-form
+-- tags, extended here from todos-only (see utils/tags.js / TagsInput /
+-- TagChipRow).
+alter table hobby_list_entries add column if not exists tags text[] not null default '{}';
 create index if not exists hobby_list_entries_hobby_list_id_idx on hobby_list_entries (hobby_list_id);
 create index if not exists hobby_list_entries_user_id_idx on hobby_list_entries (user_id);
+create index if not exists hobby_list_entries_tags_idx on hobby_list_entries using gin (tags);
 alter table hobby_list_entries enable row level security;
 drop policy if exists "allow all - hobby_list_entries" on hobby_list_entries;
 drop policy if exists "owner only - hobby_list_entries" on hobby_list_entries;
@@ -270,12 +289,19 @@ create table if not exists tracker_item_list_entries (
   tracker_item_list_id uuid not null references tracker_item_lists(id) on delete cascade,
   text text not null,
   detail text,
+  tags text[] not null default '{}',
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   created_at timestamptz not null default now(),
   updated_at timestamptz
 );
+-- retroactive-safe for the same reason as tracker_fields.select_options
+-- above — tracker_item_list_entries already exists in production.
+-- Free-form tags, extended here from todos-only (see utils/tags.js /
+-- TagsInput / TagChipRow).
+alter table tracker_item_list_entries add column if not exists tags text[] not null default '{}';
 create index if not exists tracker_item_list_entries_list_id_idx on tracker_item_list_entries (tracker_item_list_id);
 create index if not exists tracker_item_list_entries_user_id_idx on tracker_item_list_entries (user_id);
+create index if not exists tracker_item_list_entries_tags_idx on tracker_item_list_entries using gin (tags);
 alter table tracker_item_list_entries enable row level security;
 drop policy if exists "allow all - tracker_item_list_entries" on tracker_item_list_entries;
 drop policy if exists "owner only - tracker_item_list_entries" on tracker_item_list_entries;
@@ -291,11 +317,17 @@ create table if not exists owe_items (
   amount_owed numeric(12, 2) not null,
   months_left smallint,
   priority text not null default 'low',
+  tags text[] not null default '{}',
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   created_at timestamptz not null default now(),
   updated_at timestamptz
 );
+-- retroactive-safe for the same reason as tracker_fields.select_options
+-- above — owe_items already exists in production. Free-form tags,
+-- extended here from todos-only (see utils/tags.js / TagsInput / TagChipRow).
+alter table owe_items add column if not exists tags text[] not null default '{}';
 create index if not exists owe_items_user_id_idx on owe_items (user_id);
+create index if not exists owe_items_tags_idx on owe_items using gin (tags);
 alter table owe_items enable row level security;
 drop policy if exists "allow all - owe_items" on owe_items;
 drop policy if exists "owner only - owe_items" on owe_items;
@@ -310,11 +342,18 @@ create table if not exists wish_to_purchase_items (
   description text,
   item_amount numeric(12, 2) not null,
   amount_saved numeric(12, 2) not null default 0,
+  tags text[] not null default '{}',
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   created_at timestamptz not null default now(),
   updated_at timestamptz
 );
+-- retroactive-safe for the same reason as tracker_fields.select_options
+-- above — wish_to_purchase_items already exists in production. Free-form
+-- tags, extended here from todos-only (see utils/tags.js / TagsInput /
+-- TagChipRow).
+alter table wish_to_purchase_items add column if not exists tags text[] not null default '{}';
 create index if not exists wish_to_purchase_items_user_id_idx on wish_to_purchase_items (user_id);
+create index if not exists wish_to_purchase_items_tags_idx on wish_to_purchase_items using gin (tags);
 alter table wish_to_purchase_items enable row level security;
 drop policy if exists "allow all - wish_to_purchase_items" on wish_to_purchase_items;
 drop policy if exists "owner only - wish_to_purchase_items" on wish_to_purchase_items;

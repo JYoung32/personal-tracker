@@ -198,6 +198,7 @@ export function TrackerTypeDetailPage() {
                 .filter(Boolean)
                 .join(' · ')
             }
+            getTags={(item) => item.tags}
             onItemClick={(item) => navigate(`/trackers/${typeId}/${item.id}`)}
             onDelete={removeTrackerItem}
             emptyMessage="Nothing here — add an item above."

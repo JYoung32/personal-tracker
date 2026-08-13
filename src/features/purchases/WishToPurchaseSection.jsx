@@ -63,6 +63,7 @@ export function WishToPurchaseSection() {
           items={items}
           getLabel={(item) => item.name}
           getSecondaryLabel={formatSecondaryLabel}
+          getTags={(item) => item.tags}
           onItemClick={(item) => navigate(`/purchases/wish-to-purchase/${item.id}`)}
           onDelete={removeItem}
           emptyMessage="Nothing here — add an item above."

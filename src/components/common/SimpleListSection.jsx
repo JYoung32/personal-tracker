@@ -68,6 +68,7 @@ export function SimpleListSection({
         items={items}
         getLabel={(item) => item.text}
         getSecondaryLabel={(item) => item.detail}
+        getTags={(item) => item.tags}
         onItemClick={onItemClick}
         onDelete={onDelete}
         emptyMessage={emptyMessage}

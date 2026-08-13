@@ -6,12 +6,14 @@ import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import { PRIORITY_OPTIONS } from '../../constants/taskOptions';
 import { FormActions } from '../../components/common/FormActions';
+import { TagsInput } from '../../components/common/TagsInput';
+import { normalizeTags } from '../../utils/tags';
 
 const DEFAULT_OWE_PRIORITY = 'low';
 
 /**
  * Form for adding or editing an "Owe" list item. Calls
- * onSubmit({ name, amountOwed, monthsLeft, priority, description }). In
+ * onSubmit({ name, amountOwed, monthsLeft, priority, description, tags }). In
  * "add" mode (no initialValues) it clears itself after submit; pass
  * initialValues (an existing item) to prefill for editing. Priority
  * defaults to Low here (unlike tasks, which default to Medium).
@@ -22,6 +24,7 @@ export function OweItemForm({ initialValues, onSubmit, submitLabel = 'Add', onCa
   const [monthsLeft, setMonthsLeft] = useState(initialValues?.monthsLeft ?? '');
   const [priority, setPriority] = useState(initialValues?.priority ?? DEFAULT_OWE_PRIORITY);
   const [description, setDescription] = useState(initialValues?.description ?? '');
+  const [tags, setTags] = useState(initialValues?.tags ?? []);
 
   const parsedAmount = Number(amountOwed);
   const parsedMonths = Number(monthsLeft);
@@ -41,6 +44,7 @@ export function OweItemForm({ initialValues, onSubmit, submitLabel = 'Add', onCa
       monthsLeft: monthsLeft === '' ? null : Number(monthsLeft),
       priority,
       description: description.trim() || null,
+      tags: normalizeTags(tags),
     });
 
     if (!initialValues) {
@@ -49,6 +53,7 @@ export function OweItemForm({ initialValues, onSubmit, submitLabel = 'Add', onCa
       setMonthsLeft('');
       setPriority(DEFAULT_OWE_PRIORITY);
       setDescription('');
+      setTags([]);
     }
   }
 
@@ -193,6 +198,8 @@ export function OweItemForm({ initialValues, onSubmit, submitLabel = 'Add', onCa
           ))}
         </Select>
       </Box>
+
+      <TagsInput id="owe-tags" value={tags} onChange={setTags} />
 
       <Box sx={{ textAlign: 'center', mt: 1 }}>
         <FormActions submitLabel={submitLabel} onCancel={onCancel} />

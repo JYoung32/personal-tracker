@@ -50,27 +50,29 @@ Run `npm test` for the automated test suite (Vitest) — see
   task, ...) can also carry free-form tags, filterable via a "Tags"
   dropdown next to the frequency filter, independent of the
   hobby/tracker-item linking described below.
-- **Hobbies** — a hobby's page has a pencil-editable name/description, a
-  "Hobby Tasks" section (real to-dos, generated right there, defaulting to
+- **Hobbies** — a hobby's page has a pencil-editable name/description/tags,
+  a "Hobby Tasks" section (real to-dos, generated right there, defaulting to
   One-Time frequency instead of Daily), and a "Lists" section where you
   create Maintenance / Modifications / Wishlist / Equipment lists that then
-  show up as tabs — the same tab structure a Tracker item uses. Nothing
-  here depends on any other sub-entity existing first.
+  show up as tabs — the same tab structure a Tracker item uses. Entries in a
+  Modifications/Wishlist/Equipment list can carry their own tags too,
+  editable from the entry's own detail view. Nothing here depends on any
+  other sub-entity existing first.
 - **Trackers** — user-defined domains, created at runtime with no code
   change: name a Tracker (e.g. "Guitars"), define its own core fields
   (whatever you want, each with its own required/type setting), then add
-  items and give each one Maintenance/Modifications/Wishlist/Equipment
-  lists, same as a Hobby. Every Tracker you create shows up as its own nav
-  bar entry automatically.
+  items — each with its own free-form tags — and give each one
+  Maintenance/Modifications/Wishlist/Equipment lists, same as a Hobby.
+  Every Tracker you create shows up as its own nav bar entry automatically.
 - **Finances** — a tab row: **Owe** (bills/debts — name, description, $
-  owed, optional months left, priority defaulting to Low) and **Wish to
-  Purchase** (name, description, item amount, amount saved — the amount-
-  saved field shows a live "% saved" helper text). The Owe list sorts by
-  priority (not shown in the list itself, only on its edit form) and shows
-  a computed, non-stored "Monthly payment" on the form when both $ owed and
-  months left are set; the list row lets you click the $ owed amount or
-  months-left directly to edit them inline, and totals a "Total" and
-  "Monthly Owed" underneath.
+  owed, optional months left, priority defaulting to Low, tags) and **Wish
+  to Purchase** (name, description, item amount, amount saved, tags — the
+  amount-saved field shows a live "% saved" helper text). The Owe list
+  sorts by priority (not shown in the list itself, only on its edit form)
+  and shows a computed, non-stored "Monthly payment" on the form when both
+  $ owed and months left are set; the list row lets you click the $ owed
+  amount or months-left directly to edit them inline, shows any tags
+  underneath, and totals a "Total" and "Monthly Owed" underneath that.
 - **Profile** — email (read-only), optional username, first name, last
   name, reached by clicking the nav-bar identity. Setting a username makes
   it show in the nav bar instead of your email.
@@ -227,11 +229,14 @@ public/
   item Maintenance lists).
 - **Delete confirmation**: `ConfirmDeleteButton` wraps any delete trigger
   with a confirmation dialog — used everywhere something can be deleted.
-- **List rendering**: `NavigableRowList` (click to drill in),
-  `ChecklistRowList` (checkbox, no navigation), `MaintenanceTaskList`
-  (checkbox + inline frequency/day controls, or read-only secondary text —
-  see `readOnlySchedule` above) — all three delete through
-  `ConfirmDeleteButton`.
+- **Tags**: `TagsInput` (labeled Autocomplete-chip input) and `TagChipRow`
+  (read-only chip row) are the shared input/display pair every taggable
+  entity's form and list/detail view uses — see "Why it's built this way".
+- **List rendering**: `NavigableRowList` (click to drill in, optional
+  `getTags` renders a `TagChipRow` per row), `ChecklistRowList` (checkbox,
+  no navigation), `MaintenanceTaskList` (checkbox + inline frequency/day
+  controls, or read-only secondary text — see `readOnlySchedule` above) —
+  all three delete through `ConfirmDeleteButton`.
 - **Reusable forms**: `SingleFieldForm` (one text field), `SimpleItemForm`
   + `SimpleItemDetailPage` (name + detail, used for modifications/wishlist
   items), `MaintenanceTaskForm`.
@@ -343,22 +348,30 @@ belongs to one of the hobby's Maintenance-type lists if it has both. A
 Tracker item's Maintenance-type lists follow the same idea with
 `trackerItemId`/`trackerItemListId` — see the Trackers section below.
 
-**Free-form tags are a separate, simpler mechanism layered on top of that
-entity-linking scheme, not a replacement for it.** `todos.tags` is a plain
-Postgres `text[]` — no join table, no per-tag row, since
-tags are arbitrary user text with no fixed set at this scale. `TodoForm`
-collects them with an `Autocomplete` in `freeSolo`+`multiple` mode (chips,
-no suggestion list — see its own comment for why suggestions were skipped)
-and normalizes them through `utils/tags.js`'s `normalizeTags` before
-`onSubmit` (trim, drop empties, case-insensitive dedupe) so casing/typo
-variants don't each become their own filter option.
-`useTodoFilters.availableTags` derives the filter dropdown's options
-straight from whatever tags are actually present in the current `todos`
-list — no separate "list all tags" query. Because `tags` lives on the same
-`todos` row as `hobbyId`/`trackerItemId`/etc., an entity-linked task (a
-maintenance item, a hobby task) can carry free-form tags too, exactly like
-a plain to-do — `TaskDetailPage` reuses `TodoForm` for every task
-regardless of origin, so this needed no extra wiring.
+**Free-form tags started as a to-do-only mechanism and have since spread to
+every taggable entity in the app, sharing two extracted components rather
+than duplicating the pattern per feature.** `TagsInput`
+(`components/common/`) is the labeled `{value, onChange}` Autocomplete-chip
+input (`multiple freeSolo`, no suggestion list — see its own comment for
+why suggestions were skipped), and `TagChipRow` is the read-only wrapped
+row of small outlined chips (`{tags, dimmed}`) — both originally written
+inline in `TodoForm`/`TodoItem`, extracted once a second consumer needed
+the exact same behavior. Every taggable table (`todos`, `hobbies`,
+`tracker_items`, `hobby_list_entries`, `tracker_item_list_entries`,
+`owe_items`, `wish_to_purchase_items`) stores tags identically: a plain
+Postgres `text[]` column, no join table, no per-tag row, since tags are
+arbitrary user text with no fixed set at this scale. Every form normalizes
+through `utils/tags.js`'s `normalizeTags` before `onSubmit` (trim, drop
+empties, case-insensitive dedupe) so casing/typo variants don't multiply.
+Because `todos.tags` lives on the same row as `hobbyId`/`trackerItemId`/
+etc., an entity-linked task (a maintenance item, a hobby task) carries
+free-form tags too, exactly like a plain to-do — `TaskDetailPage` reuses
+`TodoForm` for every task regardless of origin, so that needed no extra
+wiring. To-Do/Overview are still the only pages with a filterable "Tags"
+dropdown (`useTodoFilters.availableTags`, derived straight from whatever
+tags are present in the current `todos` list, no separate query) — the
+other entities show/store tags but don't filter by them yet; that's a
+separate follow-up if a list actually needs it at this data scale.
 
 **Trackers replaced Garage and Armory, which used to be built-in, fixed
 domains (make/model/trim/color for vehicles, make/model/caliber for
@@ -708,9 +721,6 @@ the way for these; roughly in priority order.
   most-active hobby/tracker, upcoming maintenance across all tracker
   types. The aggregation plumbing already exists on Overview; this is
   mostly a display layer.
-- **Extend tags beyond to-dos.** Tags landed on to-dos only — consider
-  whether Hobbies, Tracker items, or Finances items would benefit from the
-  same free-form tagging, or whether that's to-do-specific by design.
 - **Search across collections** — client-side filter first, given
   personal-scale data volume.
 - **Notes/attachments on individual items** — fits the existing

@@ -4,7 +4,6 @@ import Typography from '@mui/material/Typography';
 import Checkbox from '@mui/material/Checkbox';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import {
@@ -17,6 +16,7 @@ import {
   formatRecurringDayLabel,
 } from '../../constants/taskOptions';
 import { ConfirmDeleteButton } from './ConfirmDeleteButton';
+import { TagChipRow } from './TagChipRow';
 
 const FREQUENCY_LABELS = Object.fromEntries(FREQUENCY_OPTIONS.map((opt) => [opt.value, opt.label]));
 const PRIORITY_LABELS = Object.fromEntries(PRIORITY_OPTIONS.map((opt) => [opt.value, opt.label]));
@@ -137,19 +137,7 @@ export function MaintenanceTaskList({
                     {metaText}
                   </Typography>
                 )}
-                {task.tags?.length > 0 && (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                    {task.tags.map((tag) => (
-                      <Chip
-                        key={tag}
-                        label={tag}
-                        size="small"
-                        variant="outlined"
-                        sx={{ height: 20, fontSize: 11, opacity: task.completed ? 0.6 : 1 }}
-                      />
-                    ))}
-                  </Box>
-                )}
+                <TagChipRow tags={task.tags} dimmed={task.completed} />
               </Box>
             ) : (
               <>

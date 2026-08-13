@@ -16,6 +16,7 @@ import { AddFormPanel } from '../../components/common/AddFormPanel';
 import { AddToggleActions } from '../../components/common/AddToggleActions';
 import { RelatedListTabs } from '../../components/common/RelatedListTabs';
 import { MaintenanceSection } from '../../components/common/MaintenanceSection';
+import { TagChipRow } from '../../components/common/TagChipRow';
 import { SimpleListSection } from '../../components/common/SimpleListSection';
 import { HobbyListForm } from '../hobbies/HobbyListForm';
 import { TrackerItemForm } from './TrackerItemForm';
@@ -202,6 +203,9 @@ export function TrackerItemDetailPage() {
                 {item.notes}
               </Typography>
             )}
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <TagChipRow tags={item.tags} />
+            </Box>
           </EditableDetails>
 
           <Divider sx={{ my: 5 }} />

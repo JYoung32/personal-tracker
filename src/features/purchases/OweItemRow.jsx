@@ -5,6 +5,7 @@ import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import { ConfirmDeleteButton } from '../../components/common/ConfirmDeleteButton';
+import { TagChipRow } from '../../components/common/TagChipRow';
 
 const INLINE_FIELD_INPUT_STYLE = { fontSize: 12, textAlign: 'right', padding: '0 0 2px' };
 
@@ -174,6 +175,7 @@ export function OweItemRow({ item, onItemClick, onAmountChange, onMonthsLeftChan
             </>
           )}
         </Box>
+        <TagChipRow tags={item.tags} />
       </Box>
 
       <ConfirmDeleteButton

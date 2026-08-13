@@ -3,10 +3,12 @@ import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { FormActions } from '../../components/common/FormActions';
+import { TagsInput } from '../../components/common/TagsInput';
+import { normalizeTags } from '../../utils/tags';
 
 /**
  * Form for adding or editing a "Wish to Purchase" item. Calls
- * onSubmit({ name, description, itemAmount, amountSaved }). In "add" mode
+ * onSubmit({ name, description, itemAmount, amountSaved, tags }). In "add" mode
  * (no initialValues) it clears itself after submit; pass initialValues (an
  * existing item) to prefill for editing. The Amount saved field shows a
  * live "% saved" helper text once both amounts are entered.
@@ -16,6 +18,7 @@ export function WishToPurchaseForm({ initialValues, onSubmit, submitLabel = 'Add
   const [description, setDescription] = useState(initialValues?.description ?? '');
   const [itemAmount, setItemAmount] = useState(initialValues?.itemAmount ?? '');
   const [amountSaved, setAmountSaved] = useState(initialValues?.amountSaved ?? '');
+  const [tags, setTags] = useState(initialValues?.tags ?? []);
 
   const parsedItemAmount = Number(itemAmount);
   const parsedAmountSaved = Number(amountSaved);
@@ -38,6 +41,7 @@ export function WishToPurchaseForm({ initialValues, onSubmit, submitLabel = 'Add
       description: description.trim() || null,
       itemAmount: Number(itemAmount),
       amountSaved: amountSaved === '' ? 0 : Number(amountSaved),
+      tags: normalizeTags(tags),
     });
 
     if (!initialValues) {
@@ -45,6 +49,7 @@ export function WishToPurchaseForm({ initialValues, onSubmit, submitLabel = 'Add
       setDescription('');
       setItemAmount('');
       setAmountSaved('');
+      setTags([]);
     }
   }
 
@@ -142,6 +147,8 @@ export function WishToPurchaseForm({ initialValues, onSubmit, submitLabel = 'Add
           />
         </Box>
       </Box>
+
+      <TagsInput id="wish-tags" value={tags} onChange={setTags} />
 
       <Box sx={{ textAlign: 'center', mt: 1 }}>
         <FormActions submitLabel={submitLabel} onCancel={onCancel} />

@@ -4,8 +4,6 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import Autocomplete from '@mui/material/Autocomplete';
-import Chip from '@mui/material/Chip';
 import {
   FREQUENCY_OPTIONS,
   PRIORITY_OPTIONS,
@@ -17,6 +15,7 @@ import {
   supportsRecurringWeekOfMonth,
 } from '../../constants/taskOptions';
 import { FormActions } from '../../components/common/FormActions';
+import { TagsInput } from '../../components/common/TagsInput';
 import { normalizeTags } from '../../utils/tags';
 
 /**
@@ -303,35 +302,7 @@ export function TodoForm({ initialValues, onSubmit, submitLabel = 'Add', onCance
         </Box>
       )}
 
-      <Box>
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          component="label"
-          htmlFor="todo-tags"
-          align="center"
-          sx={{ display: 'block', mb: 0.5 }}
-        >
-          Tags (optional)
-        </Typography>
-        <Autocomplete
-          id="todo-tags"
-          multiple
-          freeSolo
-          options={[]}
-          value={tags}
-          onChange={(_, newValue) => setTags(newValue)}
-          renderValue={(value, getItemProps) =>
-            value.map((tag, index) => {
-              const { key, ...chipProps } = getItemProps({ index });
-              return <Chip key={key} label={tag} size="small" {...chipProps} />;
-            })
-          }
-          renderInput={(params) => (
-            <TextField {...params} variant="standard" placeholder="Type a tag, press Enter" />
-          )}
-        />
-      </Box>
+      <TagsInput id="todo-tags" value={tags} onChange={setTags} />
 
       <Box sx={{ textAlign: 'center', mt: 3 }}>
         <FormActions submitLabel={submitLabel} onCancel={onCancel} />

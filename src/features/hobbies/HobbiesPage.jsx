@@ -49,6 +49,7 @@ export function HobbiesPage() {
         <NavigableRowList
           items={hobbies}
           getLabel={(hobby) => hobby.name}
+          getTags={(hobby) => hobby.tags}
           onItemClick={(hobby) => navigate(`/hobbies/${hobby.id}`)}
           onDelete={removeItem}
           emptyMessage="Nothing here — add a hobby above."
