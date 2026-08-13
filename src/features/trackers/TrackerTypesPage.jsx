@@ -34,7 +34,14 @@ export function TrackerTypesPage() {
     const type = await addItem({ name, description, itemNameLabel });
     await Promise.all(
       fieldDefs.map((f) =>
-        addField({ label: f.label, required: f.required, fieldType: f.fieldType, trackerTypeId: type.id })
+        addField({
+          label: f.label,
+          required: f.required,
+          fieldType: f.fieldType,
+          selectOptions: f.selectOptions,
+          sortOrder: f.sortOrder,
+          trackerTypeId: type.id,
+        })
       )
     );
   }

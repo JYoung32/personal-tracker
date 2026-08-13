@@ -19,6 +19,7 @@ import { MaintenanceSection } from '../../components/common/MaintenanceSection';
 import { SimpleListSection } from '../../components/common/SimpleListSection';
 import { HobbyListForm } from '../hobbies/HobbyListForm';
 import { TrackerItemForm } from './TrackerItemForm';
+import { formatFieldValue } from './formatFieldValue';
 
 /**
  * One tracker item's detail page for a user-defined Tracker. Core fields
@@ -72,7 +73,10 @@ export function TrackerItemDetailPage() {
   useRecurringReset(todos, todosLoading, updateTodo);
 
   const type = useMemo(() => trackerTypes.find((t) => t.id === typeId), [trackerTypes, typeId]);
-  const typeFields = useMemo(() => fields.filter((f) => f.trackerTypeId === typeId), [fields, typeId]);
+  const typeFields = useMemo(
+    () => fields.filter((f) => f.trackerTypeId === typeId).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)),
+    [fields, typeId]
+  );
   const item = useMemo(() => trackerItems.find((i) => i.id === itemId), [trackerItems, itemId]);
   const lists = useMemo(
     () => itemLists.filter((list) => list.trackerItemId === itemId && isKnownHobbyListType(list.type)),
@@ -179,13 +183,14 @@ export function TrackerItemDetailPage() {
             <Typography variant="h4" fontWeight={500} align="center" gutterBottom>
               {item.title}
             </Typography>
-            {typeFields.map((field) =>
-              item.fieldValues?.[field.id] ? (
+            {typeFields.map((field) => {
+              const displayValue = formatFieldValue(field, item.fieldValues?.[field.id]);
+              return displayValue ? (
                 <Typography key={field.id} variant="body2" color="text.secondary" align="center">
-                  {field.label}: {item.fieldValues[field.id]}
+                  {field.label}: {displayValue}
                 </Typography>
-              ) : null
-            )}
+              ) : null;
+            })}
             {item.notes && (
               <Typography
                 variant="body2"

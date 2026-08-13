@@ -14,6 +14,11 @@ import { AddToggleActions } from '../../components/common/AddToggleActions';
 import { NavigableRowList } from '../../components/common/NavigableRowList';
 import { TrackerTypeForm } from './TrackerTypeForm';
 import { TrackerItemForm } from './TrackerItemForm';
+import { formatFieldValue } from './formatFieldValue';
+
+function sameOptions(a, b) {
+  return JSON.stringify(a ?? []) === JSON.stringify(b ?? []);
+}
 
 /**
  * Manage one Tracker: rename/delete the type itself and edit its Fields
@@ -53,7 +58,10 @@ export function TrackerTypeDetailPage() {
   const [showItemForm, setShowItemForm] = useState(false);
 
   const type = useMemo(() => trackerTypes.find((t) => t.id === typeId), [trackerTypes, typeId]);
-  const typeFields = useMemo(() => fields.filter((f) => f.trackerTypeId === typeId), [fields, typeId]);
+  const typeFields = useMemo(
+    () => fields.filter((f) => f.trackerTypeId === typeId).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)),
+    [fields, typeId]
+  );
   const typeItems = useMemo(
     () => trackerItems.filter((item) => item.trackerTypeId === typeId),
     [trackerItems, typeId]
@@ -64,9 +72,9 @@ export function TrackerTypeDetailPage() {
   // (case-insensitive, same as normalizeTags) so an untouched label keeps
   // its row (and so its id, and so any item data already keyed by it),
   // while a missing label is removed and a new one is added fresh. A
-  // label present in both gets its required/fieldType persisted if either
-  // changed — that's what a click on an existing field pill (opening the
-  // required/type dialog) actually saves.
+  // label present in both gets its required/fieldType/selectOptions/
+  // sortOrder persisted if any changed — that's what a click on an
+  // existing field pill (opening its metadata dialog) actually saves.
   async function handleSaveType({ name, description, itemNameLabel, fieldDefs }) {
     await updateType(typeId, { name, description, itemNameLabel });
 
@@ -78,16 +86,32 @@ export function TrackerTypeDetailPage() {
       .map((next) => ({ next, current: currentByLabel.get(next.label.toLowerCase()) }))
       .filter(
         ({ next, current }) =>
-          current && (current.required !== next.required || current.fieldType !== next.fieldType)
+          current &&
+          (current.required !== next.required ||
+            current.fieldType !== next.fieldType ||
+            current.sortOrder !== next.sortOrder ||
+            !sameOptions(current.selectOptions, next.selectOptions))
       );
 
     await Promise.all([
       ...toAdd.map((f) =>
-        addField({ label: f.label, required: f.required, fieldType: f.fieldType, trackerTypeId: typeId })
+        addField({
+          label: f.label,
+          required: f.required,
+          fieldType: f.fieldType,
+          selectOptions: f.selectOptions,
+          sortOrder: f.sortOrder,
+          trackerTypeId: typeId,
+        })
       ),
       ...toRemove.map((f) => removeField(f.id)),
       ...toUpdate.map(({ next, current }) =>
-        updateField(current.id, { required: next.required, fieldType: next.fieldType })
+        updateField(current.id, {
+          required: next.required,
+          fieldType: next.fieldType,
+          selectOptions: next.selectOptions,
+          sortOrder: next.sortOrder,
+        })
       ),
     ]);
   }
@@ -169,7 +193,10 @@ export function TrackerTypeDetailPage() {
             items={typeItems}
             getLabel={(item) => item.title}
             getSecondaryLabel={(item) =>
-              typeFields.map((field) => item.fieldValues?.[field.id]).filter(Boolean).join(' · ')
+              typeFields
+                .map((field) => formatFieldValue(field, item.fieldValues?.[field.id]))
+                .filter(Boolean)
+                .join(' · ')
             }
             onItemClick={(item) => navigate(`/trackers/${typeId}/${item.id}`)}
             onDelete={removeTrackerItem}

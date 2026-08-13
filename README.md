@@ -351,26 +351,47 @@ always text, so that editor wouldn't mean anything here.
 **A tracker field's `key` is the field's own `id`, never a label-derived
 slug.** `tracker_items.field_values` is a jsonb object; each field's
 column-equivalent is looked up by `tracker_fields.id` (a uuid), not by its
-`label` text. Each field pill also carries `required` (checkbox) and
-`fieldType` (string/number) — click a pill (not its delete X) to open a
-small dialog and edit those two; `TrackerItemForm` reads them to drop the
-"(optional)" suffix and block submit on an empty required field, and to
-render a `type="number"` TextField instead of text. Neither changes how
-the value is stored — `field_values` is jsonb text either way — they're
-pure form-behavior metadata read at render/submit time.
+`label` text. Each field pill also carries `required` (checkbox),
+`fieldType` (string/number/date/boolean/select), `selectOptions` (only
+shown when `fieldType` is select — same tag-pill input as the Fields
+field itself), and `sortOrder` (a plain number) — click a pill (not its
+delete X) to open a small dialog and edit these; `TrackerItemForm` reads
+them to drop the "(optional)" suffix and block submit on an empty
+required field (except `boolean`, which always has a definite true/false
+value so "required" doesn't apply to it), and to pick which input
+renders — text/number/date TextField, a Checkbox, or a Select populated
+from `selectOptions`. None of this changes how the value is stored —
+`field_values` is jsonb either way (a real boolean for boolean fields,
+text for everything else) — it's pure form-behavior metadata read at
+render/submit time. `formatFieldValue` (`features/trackers/
+formatFieldValue.js`) is the one place that turns a stored value back
+into display text — mainly for `boolean`, whose raw `true`/`false`/absent
+isn't already display-ready ("Yes"/"No"/nothing) — shared by
+`TrackerItemDetailPage`'s read-only summary and `TrackerTypeDetailPage`'s
+item-list secondary line so both agree on how a field renders.
+
+`sortOrder` controls the order fields appear in on the dynamic item form
+and in the pills themselves — lower sorts first, ties fall back to array
+order (creation order for existing fields, typed order for fresh ones in
+the same edit session), so a field left at the default `0` just stays
+wherever it naturally falls unless deliberately reordered. Every place
+that reads a type's fields (`TrackerTypeDetailPage`,
+`TrackerItemDetailPage`) sorts by it after filtering — `TrackerItemForm`
+itself just renders `fields` in whatever order it's handed, trusting the
+caller to have sorted (documented in its own docstring).
 
 The pill editor hands the whole set back as `fieldDefs`
-(`{label, required, fieldType}` per pill), so
+(`{label, required, fieldType, selectOptions, sortOrder}` per pill), so
 `TrackerTypeDetailPage.handleSaveType` diffs it against the type's current
 fields *by label* (case-insensitive, same as `normalizeTags`): a label
 left untouched keeps its existing row — and so its id, and so any item
 data already keyed by it — while a label that disappears is deleted and a
-new one is inserted fresh; a label present in both gets `required`/
-`fieldType` written back onto its existing row if either changed (that's
-what a pill click's dialog actually persists). In other words a pure
-rename (delete `"Color"` pill, add `"Colour"` pill) is *not* id-preserving
-from the UI's perspective, even though the underlying id-as-key scheme is
-what makes that safe to do at all: it just looks like
+new one is inserted fresh; a label present in both gets its metadata
+written back onto its existing row if any of it changed (that's what a
+pill click's dialog actually persists). In other words a pure rename
+(delete `"Color"` pill, add `"Colour"` pill) is *not* id-preserving from
+the UI's perspective, even though the underlying id-as-key scheme is what
+makes that safe to do at all: it just looks like
 delete-old-field-add-new-field, same as it would with a plain tag list.
 That's also why deleting a field can't accidentally resurrect old data: a
 field's `id` is never reused, so a re-added field with the same label
@@ -608,45 +629,64 @@ re-deriving context.
 
 ---
 
+## Error Handling & Reliability
+
+**Suggested priority: Low — mostly closed out.** What's left is refinement,
+not gaps.
+
+- **Batch `useRecurringReset` updates.** The dedup guard (`resettingIds`)
+  correctly stops the same item being submitted twice concurrently, but it
+  still sends one `updateItem` call per due item rather than one batched
+  call when several reset at once. Fine at personal scale; revisit only if
+  the number of recurring items grows enough to matter.
+- **Schema-level validation for Tracker fields.** `required`/`field_type`
+  on `tracker_fields` are currently UI-only metadata — `TrackerItemForm`
+  enforces them, but nothing stops an empty required field or a
+  non-numeric value in a "number" field from being written via a direct
+  API call. Low risk for a single-user app; worth a Postgres check
+  constraint or a jsonb validation trigger if that guarantee ever needs to
+  be real rather than UI-level.
+
+---
+
 ## Technical / Architecture Improvements
 
-**Suggested priority: Next, before adding more surface area.** The codebase
-is clean today — these keep it that way as it grows.
+**Suggested priority: Low-to-medium.** The two big structural pushes
+(splitting, testing) are done; what's left is smaller and can be picked up
+opportunistically.
 
-- **Revisit monthly/yearly interval math.** `FREQUENCY_INTERVAL_DAYS` uses
-  fixed `30`/`365` day approximations, which will drift from true calendar
-  months/years over time (e.g. a task anchored on the 31st walks backward
-  through shorter months). Fine for now — flag for calendar-accurate logic
-  if it ever starts to matter in practice.
-- **Consider a native wrapper (Capacitor)** if you ever want actual App
-  Store/Play Store presence beyond "installs like an app" via the PWA.
+- **Revisit monthly/yearly interval math.** `FREQUENCY_INTERVAL_DAYS`
+  still uses fixed `30`/`365`-day approximations in `recurrence.js`, so a
+  "monthly" task anchored near month-end will drift over time. Unchanged
+  from the original note — still low priority, but flagging again since
+  it's the one piece of the recurrence work that wasn't part of this
+  round.
+- **Consider a native wrapper (Capacitor)** if you ever want App
+  Store/Play Store presence beyond the current installable PWA.
 
 ---
 
 ## Feature Builds
 
-**Suggested priority: After the above, and roughly in this order** — each
-builds on stability work above rather than competing with it.
+**Suggested priority: Now unblocked** — the stability work above cleared
+the way for these; roughly in priority order.
 
 - **Dashboard/stats on Overview** — completion rate over time, streaks,
-  most-active hobby, upcoming maintenance across Hobbies/Trackers. The
-  aggregation plumbing already exists (Overview reads the full cross-tab
-  list); this is mostly a display layer on top.
-- **Search across collections** — likely a client-side filter first, given
-  data volume is personal-scale; revisit if it ever needs to be
-  server-side.
-- **File attachments on individual items** (photos, receipts, PDFs) —
-  a bigger lift than the plain-text notes fields already shipped (see
-  "Why it's built this way"): needs a Supabase Storage bucket, storage RLS
-  policies scoping files to the owning account, upload UI, and an
-  attachment list (thumbnail/filename, download, delete) per item.
+  most-active hobby/tracker, upcoming maintenance across all tracker
+  types. The aggregation plumbing already exists on Overview; this is
+  mostly a display layer.
+- **Extend tags beyond to-dos.** Tags landed on to-dos only — consider
+  whether Hobbies, Tracker items, or Finances items would benefit from the
+  same free-form tagging, or whether that's to-do-specific by design.
+- **Search across collections** — client-side filter first, given
+  personal-scale data volume.
+- **Notes/attachments on individual items** — fits the existing
+  `EditableDetails` pattern used elsewhere.
 - **Export/import (JSON/CSV)** as a personal backup/restore path,
   independent of Supabase's own backups.
-- **Notifications/reminders** — a bigger lift, since it likely wants a
-  Supabase Edge Function or scheduled job rather than pure client code;
-  worth scoping separately once the rest of the roadmap settles.
-
----
+- **Notifications/reminders** — bigger lift, likely a Supabase Edge
+  Function or scheduled job rather than pure client code; scope separately
+  when picked up.
 
 ## Notes
 
@@ -672,3 +712,9 @@ builds on stability work above rather than competing with it.
   way" above) — it had grown to five files (four incremental on top of the
   original), all long since applied to production, so it's back to one
   file reflecting current state, same as the original schema.sql fold.
+- **Tracker field types are expanded beyond string/number**, and fields
+  can now be manually ordered — date, boolean, and select (with
+  user-defined options) joined string/number, plus a per-field `sortOrder`
+  that controls where each one lands on the dynamic item form (see "Why
+  it's built this way" above) — pruned from Technical / Architecture
+  Improvements above.

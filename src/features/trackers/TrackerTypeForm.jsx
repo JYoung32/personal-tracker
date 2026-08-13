@@ -17,8 +17,9 @@ import { FormActions } from '../../components/common/FormActions';
 
 // Trims, drops empties, and dedupes labels case-insensitively (same rule
 // as utils/tags.js normalizeTags) while preserving each pill's
-// required/fieldType metadata — normalizeTags itself only handles plain
-// strings, so this is the pill-aware equivalent.
+// required/fieldType/selectOptions/sortOrder metadata — normalizeTags
+// itself only handles plain strings, so this is the pill-aware
+// equivalent.
 function normalizeFieldPills(pills) {
   const seen = new Set();
   const result = [];
@@ -31,6 +32,10 @@ function normalizeFieldPills(pills) {
     result.push({ ...pill, label });
   }
   return result;
+}
+
+function emptyFieldPill(label) {
+  return { key: crypto.randomUUID(), label, required: false, fieldType: 'string', selectOptions: [], sortOrder: 0 };
 }
 
 /**
@@ -52,21 +57,26 @@ function normalizeFieldPills(pills) {
  * as TodoForm's Tags field — type a label, press Enter, repeat — as pills
  * instead of a separate managed list. In add mode it starts empty; pass
  * the type's current `tracker_fields` rows as the `fields` prop
- * (`[{id, label, required, fieldType}, ...]`) in edit mode to seed the
- * pills from what already exists. Clicking a field pill (not its delete X)
- * opens a small dialog to set that field's `required` (checkbox) and
- * `fieldType` (string/number) — this is metadata `tracker_fields` rows
- * carry per-field, unlike `itemNameLabel` which is a whole-type setting,
- * so only these pills get that editor.
+ * (`[{id, label, required, fieldType, selectOptions, sortOrder}, ...]`)
+ * in edit mode to seed the pills from what already exists. Clicking a
+ * field pill (not its delete X) opens a small dialog to set that field's
+ * `required` (checkbox), `fieldType` (string/number/date/boolean/select),
+ * `selectOptions` (only shown for the select type — same tag-pill input
+ * as the Fields field itself) and `sortOrder` (a plain number — lower
+ * sorts first; ties fall back to array order, so a fresh field with the
+ * default 0 just falls in wherever it was typed unless you deliberately
+ * reorder it) — this is metadata `tracker_fields` rows carry per-field,
+ * unlike `itemNameLabel` which is a whole-type setting, so only these
+ * pills get that editor.
  *
  * `onSubmit` gets the resulting pill set as `fieldDefs`
- * (`[{label, required, fieldType}, ...]`, sourced from `field.key`, `field.label`
- * — the caller reconciles it against any existing fields by label (add
- * what's new, remove what's missing, update required/fieldType on what's
- * unchanged so its id — and so its data — survives), the same "diff by
- * value" idiom a plain tag list uses, since a pure label rename has no
- * separate affordance here (it looks like delete-old-add-new, same as any
- * tag list).
+ * (`[{label, required, fieldType, selectOptions, sortOrder}, ...]`) — the
+ * caller reconciles it against any existing fields by label (add what's
+ * new, remove what's missing, update metadata on what's unchanged so its
+ * id — and so its data — survives), the same "diff by value" idiom a
+ * plain tag list uses, since a pure label rename has no separate
+ * affordance here (it looks like delete-old-add-new, same as any tag
+ * list).
  */
 export function TrackerTypeForm({ initialValues, fields, onSubmit, submitLabel = 'Add', onCancel }) {
   const [name, setName] = useState(initialValues?.name ?? '');
@@ -79,6 +89,8 @@ export function TrackerTypeForm({ initialValues, fields, onSubmit, submitLabel =
       label: f.label,
       required: !!f.required,
       fieldType: f.fieldType || 'string',
+      selectOptions: f.selectOptions ?? [],
+      sortOrder: f.sortOrder ?? 0,
     }))
   );
   const [editingFieldKey, setEditingFieldKey] = useState(null);
@@ -86,11 +98,7 @@ export function TrackerTypeForm({ initialValues, fields, onSubmit, submitLabel =
   const editingField = fieldPills.find((p) => p.key === editingFieldKey) ?? null;
 
   function handleFieldsChange(_, newValue) {
-    setFieldPills(
-      newValue.map((v) =>
-        typeof v === 'string' ? { key: crypto.randomUUID(), label: v, required: false, fieldType: 'string' } : v
-      )
-    );
+    setFieldPills(newValue.map((v) => (typeof v === 'string' ? emptyFieldPill(v) : v)));
   }
 
   function updateFieldPill(key, updates) {
@@ -106,10 +114,12 @@ export function TrackerTypeForm({ initialValues, fields, onSubmit, submitLabel =
       name: trimmed,
       description: description.trim() || null,
       itemNameLabel: itemNameLabel.trim() || null,
-      fieldDefs: normalizeFieldPills(fieldPills).map(({ label, required, fieldType }) => ({
+      fieldDefs: normalizeFieldPills(fieldPills).map(({ label, required, fieldType, selectOptions, sortOrder }) => ({
         label,
         required,
         fieldType,
+        selectOptions,
+        sortOrder,
       })),
     });
     if (isAdding) {
@@ -280,7 +290,63 @@ export function TrackerTypeForm({ initialValues, fields, onSubmit, submitLabel =
             >
               <MenuItem value="string">String</MenuItem>
               <MenuItem value="number">Number</MenuItem>
+              <MenuItem value="date">Date</MenuItem>
+              <MenuItem value="boolean">Boolean</MenuItem>
+              <MenuItem value="select">Select</MenuItem>
             </Select>
+          </Box>
+
+          {editingField?.fieldType === 'select' && (
+            <Box>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                component="label"
+                htmlFor="tracker-field-select-options"
+                align="center"
+                sx={{ display: 'block', mb: 0.5 }}
+              >
+                Options
+              </Typography>
+              <Autocomplete
+                id="tracker-field-select-options"
+                multiple
+                freeSolo
+                options={[]}
+                value={editingField?.selectOptions ?? []}
+                onChange={(_, newValue) => updateFieldPill(editingField.key, { selectOptions: newValue })}
+                renderValue={(value, getItemProps) =>
+                  value.map((opt, index) => {
+                    const { key: _key, ...chipProps } = getItemProps({ index });
+                    return <Chip key={opt} label={opt} size="small" {...chipProps} />;
+                  })
+                }
+                renderInput={(params) => (
+                  <TextField {...params} variant="standard" placeholder="Option, press Enter" />
+                )}
+              />
+            </Box>
+          )}
+
+          <Box>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              component="label"
+              htmlFor="tracker-field-order"
+              align="center"
+              sx={{ display: 'block', mb: 0.5 }}
+            >
+              Order
+            </Typography>
+            <TextField
+              id="tracker-field-order"
+              variant="standard"
+              type="number"
+              value={editingField?.sortOrder ?? 0}
+              onChange={(e) => updateFieldPill(editingField.key, { sortOrder: Number(e.target.value) })}
+              fullWidth
+            />
           </Box>
         </DialogContent>
         <DialogActions>

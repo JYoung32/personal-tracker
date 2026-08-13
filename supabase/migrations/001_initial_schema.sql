@@ -113,10 +113,12 @@ create policy "owner only - tracker_types" on tracker_types for all using (auth.
 -- tracker_fields: the type's own core fields (its "make/model/trim"
 -- equivalent), user-defined. `id` doubles as the key used inside
 -- tracker_items.field_values (see below) — never derive that key from
--- `label`, which is freely renameable. `required`/`field_type` are pure
--- form-behavior metadata (TrackerItemForm reads them to mark a field
--- required and pick a text vs number input) — they don't affect how
--- field_values is stored, still just jsonb text either way.
+-- `label`, which is freely renameable. `required`/`field_type`/
+-- `select_options`/`sort_order` are pure form-behavior metadata
+-- (TrackerItemForm reads them to mark a field required, pick which input
+-- to render — text/number/date/checkbox/dropdown — populate a dropdown's
+-- options, and order the fields on the form) — they don't affect how
+-- field_values is stored, still just jsonb either way.
 -- ---------------------------------------------------------------------
 create table if not exists tracker_fields (
   id uuid primary key default gen_random_uuid(),
@@ -124,11 +126,15 @@ create table if not exists tracker_fields (
   label text not null,
   required boolean not null default false,
   field_type text not null default 'string',
+  select_options text[] not null default '{}',
   sort_order integer not null default 0,
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   created_at timestamptz not null default now(),
   updated_at timestamptz
 );
+-- retroactive-safe for the same reason as tracker_types' alters used to
+-- be (see git history) — tracker_fields already exists in production.
+alter table tracker_fields add column if not exists select_options text[] not null default '{}';
 create index if not exists tracker_fields_tracker_type_id_idx on tracker_fields (tracker_type_id);
 create index if not exists tracker_fields_user_id_idx on tracker_fields (user_id);
 alter table tracker_fields enable row level security;
