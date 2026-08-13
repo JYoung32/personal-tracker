@@ -5,7 +5,7 @@ import { TodoBoard } from '../todos/TodoBoard';
 
 /**
  * Landing page (reached via the "Personal Tracker" nav-bar brand). Shows
- * every task across every tab — plain to-dos plus vehicle/armory
+ * every task across every tab — plain to-dos plus hobby and tracker item
  * maintenance tasks — collectively, using the same list/filter UI as
  * TodoPage. Read-only with respect to creating tasks: each tab still owns
  * adding its own tasks, so there's no add form here.

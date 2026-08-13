@@ -5,21 +5,18 @@ import { toggleCompletionFields } from '../../utils/recurrence';
 import { TodoBoard } from './TodoBoard';
 
 /**
- * Only tasks created directly on this page — vehicle/armory maintenance
- * tasks (tagged vehicleId/armoryItemId) and hobby tasks (tagged hobbyId,
- * whether a hobby-level task or one under a Maintenance-type list) live on
- * their own Garage/Armory/Hobbies pages instead, and everything together
- * shows up on OverviewPage.
+ * Only tasks created directly on this page — hobby tasks (tagged hobbyId,
+ * whether a hobby-level task or one under a Maintenance-type list) and
+ * tracker item maintenance tasks (tagged trackerItemId) live on their own
+ * Hobbies/Tracker pages instead, and everything together shows up on
+ * OverviewPage.
  */
 export function TodoPage() {
   const { items: todos, loading, error, addItem, updateItem, removeItem } = useCollection('todos');
 
   useRecurringReset(todos, loading, updateItem);
 
-  const ownTodos = useMemo(
-    () => todos.filter((t) => !t.vehicleId && !t.armoryItemId && !t.hobbyId),
-    [todos]
-  );
+  const ownTodos = useMemo(() => todos.filter((t) => !t.hobbyId && !t.trackerItemId), [todos]);
 
   function handleToggleComplete(id, completed) {
     updateItem(id, toggleCompletionFields(completed));

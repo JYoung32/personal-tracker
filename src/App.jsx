@@ -44,41 +44,21 @@ const WishToPurchaseItemDetailPage = lazy(() =>
     default: m.WishToPurchaseItemDetailPage,
   }))
 );
-const GaragePage = lazy(() => import('./features/garage/GaragePage').then((m) => ({ default: m.GaragePage })));
-const VehicleDetailPage = lazy(() =>
-  import('./features/garage/VehicleDetailPage').then((m) => ({ default: m.VehicleDetailPage }))
-);
-const GarageModificationDetailPage = lazy(() =>
-  import('./features/garage/GarageModificationDetailPage').then((m) => ({
-    default: m.GarageModificationDetailPage,
-  }))
-);
-const GarageWishlistDetailPage = lazy(() =>
-  import('./features/garage/GarageWishlistDetailPage').then((m) => ({ default: m.GarageWishlistDetailPage }))
-);
-const GarageWishlistItemDetailPage = lazy(() =>
-  import('./features/garage/GarageWishlistItemDetailPage').then((m) => ({
-    default: m.GarageWishlistItemDetailPage,
-  }))
-);
-const ArmoryPage = lazy(() => import('./features/armory/ArmoryPage').then((m) => ({ default: m.ArmoryPage })));
-const ArmoryItemDetailPage = lazy(() =>
-  import('./features/armory/ArmoryItemDetailPage').then((m) => ({ default: m.ArmoryItemDetailPage }))
-);
-const ArmoryModificationDetailPage = lazy(() =>
-  import('./features/armory/ArmoryModificationDetailPage').then((m) => ({
-    default: m.ArmoryModificationDetailPage,
-  }))
-);
-const ArmoryWishlistDetailPage = lazy(() =>
-  import('./features/armory/ArmoryWishlistDetailPage').then((m) => ({ default: m.ArmoryWishlistDetailPage }))
-);
-const ArmoryWishlistItemDetailPage = lazy(() =>
-  import('./features/armory/ArmoryWishlistItemDetailPage').then((m) => ({
-    default: m.ArmoryWishlistItemDetailPage,
-  }))
-);
 const ProfilePage = lazy(() => import('./features/profile/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const TrackerTypesPage = lazy(() =>
+  import('./features/trackers/TrackerTypesPage').then((m) => ({ default: m.TrackerTypesPage }))
+);
+const TrackerTypeDetailPage = lazy(() =>
+  import('./features/trackers/TrackerTypeDetailPage').then((m) => ({ default: m.TrackerTypeDetailPage }))
+);
+const TrackerItemDetailPage = lazy(() =>
+  import('./features/trackers/TrackerItemDetailPage').then((m) => ({ default: m.TrackerItemDetailPage }))
+);
+const TrackerItemListEntryDetailPage = lazy(() =>
+  import('./features/trackers/TrackerItemListEntryDetailPage').then((m) => ({
+    default: m.TrackerItemListEntryDetailPage,
+  }))
+);
 
 function RouteFallback() {
   return (
@@ -179,90 +159,42 @@ function AppRoutes() {
             }
           />
           <Route
-            path="/garage"
-            element={
-              <ProtectedRoute>
-                <GaragePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/garage/wishlist/:wishId"
-            element={
-              <ProtectedRoute>
-                <GarageWishlistItemDetailPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/garage/:vehicleId"
-            element={
-              <ProtectedRoute>
-                <VehicleDetailPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/garage/:vehicleId/modifications/:modId"
-            element={
-              <ProtectedRoute>
-                <GarageModificationDetailPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/garage/:vehicleId/wishlist/:wishId"
-            element={
-              <ProtectedRoute>
-                <GarageWishlistDetailPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/armory"
-            element={
-              <ProtectedRoute>
-                <ArmoryPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/armory/wishlist/:wishId"
-            element={
-              <ProtectedRoute>
-                <ArmoryWishlistItemDetailPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/armory/:itemId"
-            element={
-              <ProtectedRoute>
-                <ArmoryItemDetailPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/armory/:itemId/modifications/:modId"
-            element={
-              <ProtectedRoute>
-                <ArmoryModificationDetailPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/armory/:itemId/wishlist/:wishId"
-            element={
-              <ProtectedRoute>
-                <ArmoryWishlistDetailPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/profile"
             element={
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trackers"
+            element={
+              <ProtectedRoute>
+                <TrackerTypesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trackers/:typeId"
+            element={
+              <ProtectedRoute>
+                <TrackerTypeDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trackers/:typeId/:itemId"
+            element={
+              <ProtectedRoute>
+                <TrackerItemDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trackers/:typeId/:itemId/lists/:listId/entries/:entryId"
+            element={
+              <ProtectedRoute>
+                <TrackerItemListEntryDetailPage />
               </ProtectedRoute>
             }
           />

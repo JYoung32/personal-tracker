@@ -8,8 +8,13 @@
     <title>personal-tracker</title>
 
     <!-- "Add to Home Screen" support on iOS Safari (vite-plugin-pwa's
-         injected manifest link covers Android/Chrome's install prompt). -->
+         injected manifest link covers Android/Chrome's install prompt).
+         The standard mobile-web-app-capable tag is what Chrome/Android
+         actually reads now — apple-mobile-web-app-capable alone triggers
+         a "deprecated" console warning there, but iOS Safari still needs
+         its own apple- prefixed tags, so both are kept side by side. -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Tracker" />

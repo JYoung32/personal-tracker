@@ -7,7 +7,7 @@ import { currentResetBoundary, parseDateOnly } from '../utils/recurrence';
  * that boundary — i.e. completed in an earlier cycle, not the current one.
  *
  * Call this wherever a `todos` collection is loaded and rendered (the
- * to-do page, or a vehicle/armory-item page showing its linked maintenance
+ * to-do page, or a hobby/tracker-item page showing its linked maintenance
  * tasks) so resets apply no matter which page the user happens to have
  * open.
  */

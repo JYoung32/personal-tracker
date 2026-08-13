@@ -1,14 +1,24 @@
 -- 001: initial schema
 --
 -- Creates every table in its current, final shape — ownership (`user_id`),
--- row-level security, the `profiles` table, `todos.tags`, and the two
--- `notes` columns are all part of table creation here, not bolted on by
--- later migrations. This file used to be four separate ones (002 added
--- ownership/profiles, 003 added tags, 004 was an incident cleanup, 005
--- added notes) that have since been folded back into this single file now
--- that they're all long since applied to production — same idea as the
--- earlier fold of the pre-migrations schema.sql into this file. See git
--- history for the individual migrations if you need the granular story.
+-- row-level security, the `profiles` table, `todos.tags`, the two `notes`
+-- columns, and the user-defined Trackers tables are all part of table
+-- creation here, not bolted on by later migrations. This file used to be
+-- several separate ones (four incremental migrations that added
+-- ownership/profiles, tags, an incident cleanup, and notes; then a
+-- separate `002_trackers.sql` that added the Trackers feature) that have
+-- since been folded back into this single file now that they're all long
+-- since applied to production — same idea as the earlier fold of the
+-- pre-migrations schema.sql into this file. See git history for the
+-- individual migrations if you need the granular story.
+--
+-- This schema used to also have Garage and Armory: fixed, hardcoded
+-- domains (vehicles with make/model/trim/color, firearms with
+-- make/model/caliber). User-defined Trackers were built to reproduce that
+-- same shape at runtime with no code deploy, and once proven out, Garage
+-- and Armory were removed — their tables, and the `todos` columns that
+-- referenced them, were dropped from production, and this file no longer
+-- creates or references them at all.
 --
 -- Every table gets `user_id uuid not null default auth.uid() references
 -- auth.users(id)` and an owner-only RLS policy (`auth.uid() = user_id`)
@@ -29,7 +39,7 @@
 --
 -- Column names are snake_case; the app's supabaseAdapter.js converts to/from
 -- the camelCase shapes every feature already uses (id, createdAt, dueDate,
--- vehicleId, ...), so no feature code needs to know about this naming.
+-- trackerItemId, ...), so no feature code needs to know about this naming.
 --
 -- Written to be safely re-runnable — Supabase's GitHub integration
 -- replays every file in supabase/migrations/ against preview branches
@@ -39,45 +49,6 @@
 -- migrations the same way.
 
 create extension if not exists pgcrypto;
-
--- ---------------------------------------------------------------------
--- garage_vehicles
--- ---------------------------------------------------------------------
-create table if not exists garage_vehicles (
-  id uuid primary key default gen_random_uuid(),
-  make text not null,
-  model text not null,
-  trim_level text,
-  color text,
-  notes text,
-  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz
-);
-create index if not exists garage_vehicles_user_id_idx on garage_vehicles (user_id);
-alter table garage_vehicles enable row level security;
-drop policy if exists "allow all - garage_vehicles" on garage_vehicles;
-drop policy if exists "owner only - garage_vehicles" on garage_vehicles;
-create policy "owner only - garage_vehicles" on garage_vehicles for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
--- ---------------------------------------------------------------------
--- armory_items
--- ---------------------------------------------------------------------
-create table if not exists armory_items (
-  id uuid primary key default gen_random_uuid(),
-  make text not null,
-  model text not null,
-  caliber text,
-  notes text,
-  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz
-);
-create index if not exists armory_items_user_id_idx on armory_items (user_id);
-alter table armory_items enable row level security;
-drop policy if exists "allow all - armory_items" on armory_items;
-drop policy if exists "owner only - armory_items" on armory_items;
-create policy "owner only - armory_items" on armory_items for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------
 -- hobbies
@@ -116,8 +87,107 @@ drop policy if exists "owner only - hobby_lists" on hobby_lists;
 create policy "owner only - hobby_lists" on hobby_lists for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------
--- todos (shared by To-Do, Overview, Garage/Armory maintenance, Hobby tasks
--- and Hobby Maintenance-type lists — distinguished by which *_id is set)
+-- tracker_types: a user-defined domain (e.g. "Guitars"), the lightweight
+-- replacement for what Garage/Armory used to hardcode. `item_name_label`
+-- lets the type rename its items' `title` field in the UI (e.g. "Guitar
+-- Name") without a second title-equivalent column — `tracker_items.title`
+-- is still the one place the value lives.
+-- ---------------------------------------------------------------------
+create table if not exists tracker_types (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  description text,
+  item_name_label text,
+  sort_order integer not null default 0,
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz
+);
+create index if not exists tracker_types_user_id_idx on tracker_types (user_id);
+alter table tracker_types enable row level security;
+drop policy if exists "allow all - tracker_types" on tracker_types;
+drop policy if exists "owner only - tracker_types" on tracker_types;
+create policy "owner only - tracker_types" on tracker_types for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------
+-- tracker_fields: the type's own core fields (its "make/model/trim"
+-- equivalent), user-defined. `id` doubles as the key used inside
+-- tracker_items.field_values (see below) — never derive that key from
+-- `label`, which is freely renameable. `required`/`field_type` are pure
+-- form-behavior metadata (TrackerItemForm reads them to mark a field
+-- required and pick a text vs number input) — they don't affect how
+-- field_values is stored, still just jsonb text either way.
+-- ---------------------------------------------------------------------
+create table if not exists tracker_fields (
+  id uuid primary key default gen_random_uuid(),
+  tracker_type_id uuid not null references tracker_types(id) on delete cascade,
+  label text not null,
+  required boolean not null default false,
+  field_type text not null default 'string',
+  sort_order integer not null default 0,
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz
+);
+create index if not exists tracker_fields_tracker_type_id_idx on tracker_fields (tracker_type_id);
+create index if not exists tracker_fields_user_id_idx on tracker_fields (user_id);
+alter table tracker_fields enable row level security;
+drop policy if exists "allow all - tracker_fields" on tracker_fields;
+drop policy if exists "owner only - tracker_fields" on tracker_fields;
+create policy "owner only - tracker_fields" on tracker_fields for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------
+-- tracker_items: the "vehicles" equivalent. Every tracker type's items
+-- share this one table (same idiom as `todos` serving several different
+-- owners), filtered client-side by tracker_type_id. `field_values` is a
+-- jsonb object keyed by `tracker_fields.id` (a uuid, not a label-derived
+-- slug) — this makes renaming a field free and collision-proof, and it
+-- means a deleted field's leftover value is simply orphaned/invisible
+-- rather than ever resurrectable under a different field.
+-- ---------------------------------------------------------------------
+create table if not exists tracker_items (
+  id uuid primary key default gen_random_uuid(),
+  tracker_type_id uuid not null references tracker_types(id) on delete cascade,
+  title text not null,
+  field_values jsonb not null default '{}',
+  notes text,
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz
+);
+create index if not exists tracker_items_tracker_type_id_idx on tracker_items (tracker_type_id);
+create index if not exists tracker_items_user_id_idx on tracker_items (user_id);
+alter table tracker_items enable row level security;
+drop policy if exists "allow all - tracker_items" on tracker_items;
+drop policy if exists "owner only - tracker_items" on tracker_items;
+create policy "owner only - tracker_items" on tracker_items for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------
+-- tracker_item_lists (mirrors hobby_lists) — deliberately a parallel
+-- table rather than a generalization of hobby_lists, to keep zero risk to
+-- existing, stable Hobby data/code. Some schema duplication traded for
+-- that isolation.
+-- ---------------------------------------------------------------------
+create table if not exists tracker_item_lists (
+  id uuid primary key default gen_random_uuid(),
+  tracker_item_id uuid not null references tracker_items(id) on delete cascade,
+  name text not null,
+  type text not null default 'maintenance',
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz
+);
+create index if not exists tracker_item_lists_tracker_item_id_idx on tracker_item_lists (tracker_item_id);
+create index if not exists tracker_item_lists_user_id_idx on tracker_item_lists (user_id);
+alter table tracker_item_lists enable row level security;
+drop policy if exists "allow all - tracker_item_lists" on tracker_item_lists;
+drop policy if exists "owner only - tracker_item_lists" on tracker_item_lists;
+create policy "owner only - tracker_item_lists" on tracker_item_lists for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------
+-- todos (shared by To-Do, Overview, Hobby tasks, Hobby Maintenance-type
+-- lists, and Tracker item Maintenance-type lists — distinguished by which
+-- *_id is set)
 -- ---------------------------------------------------------------------
 create table if not exists todos (
   id uuid primary key default gen_random_uuid(),
@@ -129,20 +199,20 @@ create table if not exists todos (
   priority text not null default 'medium',
   completed boolean not null default false,
   completed_date date,
-  vehicle_id uuid references garage_vehicles(id) on delete cascade,
-  armory_item_id uuid references armory_items(id) on delete cascade,
   hobby_id uuid references hobbies(id) on delete cascade,
   hobby_list_id uuid references hobby_lists(id) on delete cascade,
+  tracker_item_id uuid references tracker_items(id) on delete cascade,
+  tracker_item_list_id uuid references tracker_item_lists(id) on delete cascade,
   source_label text,
   tags text[] not null default '{}',
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   created_at timestamptz not null default now(),
   updated_at timestamptz
 );
-create index if not exists todos_vehicle_id_idx on todos (vehicle_id);
-create index if not exists todos_armory_item_id_idx on todos (armory_item_id);
 create index if not exists todos_hobby_id_idx on todos (hobby_id);
 create index if not exists todos_hobby_list_id_idx on todos (hobby_list_id);
+create index if not exists todos_tracker_item_id_idx on todos (tracker_item_id);
+create index if not exists todos_tracker_item_list_id_idx on todos (tracker_item_list_id);
 -- Speeds up "does this array contain tag X" filtering if it's ever pushed
 -- server-side; the app currently filters client-side since data volume is
 -- personal-scale, but the index costs nothing to have ready.
@@ -152,82 +222,6 @@ alter table todos enable row level security;
 drop policy if exists "allow all - todos" on todos;
 drop policy if exists "owner only - todos" on todos;
 create policy "owner only - todos" on todos for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
--- ---------------------------------------------------------------------
--- garage_modifications
--- ---------------------------------------------------------------------
-create table if not exists garage_modifications (
-  id uuid primary key default gen_random_uuid(),
-  vehicle_id uuid not null references garage_vehicles(id) on delete cascade,
-  text text not null,
-  detail text,
-  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz
-);
-create index if not exists garage_modifications_vehicle_id_idx on garage_modifications (vehicle_id);
-create index if not exists garage_modifications_user_id_idx on garage_modifications (user_id);
-alter table garage_modifications enable row level security;
-drop policy if exists "allow all - garage_modifications" on garage_modifications;
-drop policy if exists "owner only - garage_modifications" on garage_modifications;
-create policy "owner only - garage_modifications" on garage_modifications for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
--- ---------------------------------------------------------------------
--- garage_wishlist (vehicle_id is null for the Garage page-level wishlist)
--- ---------------------------------------------------------------------
-create table if not exists garage_wishlist (
-  id uuid primary key default gen_random_uuid(),
-  vehicle_id uuid references garage_vehicles(id) on delete cascade,
-  text text not null,
-  detail text,
-  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz
-);
-create index if not exists garage_wishlist_vehicle_id_idx on garage_wishlist (vehicle_id);
-create index if not exists garage_wishlist_user_id_idx on garage_wishlist (user_id);
-alter table garage_wishlist enable row level security;
-drop policy if exists "allow all - garage_wishlist" on garage_wishlist;
-drop policy if exists "owner only - garage_wishlist" on garage_wishlist;
-create policy "owner only - garage_wishlist" on garage_wishlist for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
--- ---------------------------------------------------------------------
--- armory_modifications
--- ---------------------------------------------------------------------
-create table if not exists armory_modifications (
-  id uuid primary key default gen_random_uuid(),
-  armory_item_id uuid not null references armory_items(id) on delete cascade,
-  text text not null,
-  detail text,
-  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz
-);
-create index if not exists armory_modifications_armory_item_id_idx on armory_modifications (armory_item_id);
-create index if not exists armory_modifications_user_id_idx on armory_modifications (user_id);
-alter table armory_modifications enable row level security;
-drop policy if exists "allow all - armory_modifications" on armory_modifications;
-drop policy if exists "owner only - armory_modifications" on armory_modifications;
-create policy "owner only - armory_modifications" on armory_modifications for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
--- ---------------------------------------------------------------------
--- armory_wishlist (armory_item_id is null for the Armory page-level wishlist)
--- ---------------------------------------------------------------------
-create table if not exists armory_wishlist (
-  id uuid primary key default gen_random_uuid(),
-  armory_item_id uuid references armory_items(id) on delete cascade,
-  text text not null,
-  detail text,
-  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz
-);
-create index if not exists armory_wishlist_armory_item_id_idx on armory_wishlist (armory_item_id);
-create index if not exists armory_wishlist_user_id_idx on armory_wishlist (user_id);
-alter table armory_wishlist enable row level security;
-drop policy if exists "allow all - armory_wishlist" on armory_wishlist;
-drop policy if exists "owner only - armory_wishlist" on armory_wishlist;
-create policy "owner only - armory_wishlist" on armory_wishlist for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------
 -- hobby_list_entries (items in a Modifications/Wishlist/Equipment-type list;
@@ -248,6 +242,27 @@ alter table hobby_list_entries enable row level security;
 drop policy if exists "allow all - hobby_list_entries" on hobby_list_entries;
 drop policy if exists "owner only - hobby_list_entries" on hobby_list_entries;
 create policy "owner only - hobby_list_entries" on hobby_list_entries for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------
+-- tracker_item_list_entries (mirrors hobby_list_entries; items in a
+-- Modifications/Wishlist/Equipment-type list — Maintenance-type lists use
+-- `todos` with tracker_item_id + tracker_item_list_id set instead)
+-- ---------------------------------------------------------------------
+create table if not exists tracker_item_list_entries (
+  id uuid primary key default gen_random_uuid(),
+  tracker_item_list_id uuid not null references tracker_item_lists(id) on delete cascade,
+  text text not null,
+  detail text,
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz
+);
+create index if not exists tracker_item_list_entries_list_id_idx on tracker_item_list_entries (tracker_item_list_id);
+create index if not exists tracker_item_list_entries_user_id_idx on tracker_item_list_entries (user_id);
+alter table tracker_item_list_entries enable row level security;
+drop policy if exists "allow all - tracker_item_list_entries" on tracker_item_list_entries;
+drop policy if exists "owner only - tracker_item_list_entries" on tracker_item_list_entries;
+create policy "owner only - tracker_item_list_entries" on tracker_item_list_entries for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------
 -- owe_items (Finances > Owe tab)

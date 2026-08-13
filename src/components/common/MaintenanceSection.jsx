@@ -16,7 +16,8 @@ import { AddToggleActions } from './AddToggleActions';
  * exposes frequency and recurring-day controls. A "+" icon toggles the add
  * form; once open, MaintenanceTaskForm has its own centered Add/Cancel, so
  * the header icon is hidden rather than duplicating them. Pass
- * defaultFrequency to change the add form's starting frequency.
+ * defaultFrequency to change the add form's starting frequency. Pass
+ * readOnlySchedule through to MaintenanceTaskList (see its own docstring).
  */
 export function MaintenanceSection({
   title = 'Maintenance',
@@ -30,6 +31,7 @@ export function MaintenanceSection({
   onDelete,
   showHeading = false,
   defaultFrequency,
+  readOnlySchedule,
 }) {
   const [showForm, setShowForm] = useState(false);
 
@@ -74,6 +76,7 @@ export function MaintenanceSection({
         onRecurringDayChange={onRecurringDayChange}
         onDelete={onDelete}
         emptyMessage={emptyMessage}
+        readOnlySchedule={readOnlySchedule}
       />
     </Box>
   );

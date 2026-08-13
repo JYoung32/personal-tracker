@@ -14,10 +14,10 @@ import { TodoForm } from './TodoForm';
 
 /**
  * Full edit view for a single task, reached by clicking any task row
- * (whether a plain to-do or a vehicle/armory maintenance task — both are
- * the same underlying record). Only the fields TodoForm exposes are
+ * (whether a plain to-do or a hobby/tracker-item maintenance task — both
+ * are the same underlying record). Only the fields TodoForm exposes are
  * touched on save; completed/completedDate and any linking fields
- * (vehicleId, armoryItemId, sourceLabel) are left as-is.
+ * (hobbyId, trackerItemId, sourceLabel) are left as-is.
  */
 export function TaskDetailPage() {
   const { todoId } = useParams();

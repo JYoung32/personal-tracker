@@ -1,6 +1,6 @@
-// A hobby item's lists are typed so they can reuse the same tab behaviors
-// as a vehicle/armory item's Maintenance/Modifications/Wishlist tabs.
-// "Equipment" behaves exactly like Modifications, just under its own name.
+// A hobby's lists are typed so they can reuse the same tab behaviors as a
+// tracker item's Maintenance/Modifications/Wishlist tabs. "Equipment"
+// behaves exactly like Modifications, just under its own name.
 export const HOBBY_LIST_TYPES = [
   { value: 'maintenance', label: 'Maintenance' },
   { value: 'modifications', label: 'Modifications' },

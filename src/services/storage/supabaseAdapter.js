@@ -3,7 +3,7 @@
  * ----------------
  * Same four-method contract as localStorageAdapter (getAll/create/update/
  * remove), backed by real Postgres tables instead of localStorage. Every
- * feature's "collection key" (e.g. "garageVehicles", "oweItems") is a
+ * feature's "collection key" (e.g. "trackerItems", "oweItems") is a
  * camelCase name; every Postgres table/column is snake_case. Rather than
  * hand-maintaining a key -> table map and per-collection field mappers,
  * this converts generically in both directions — so a new collection only

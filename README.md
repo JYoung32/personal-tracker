@@ -1,6 +1,6 @@
 # Personal Tracker
 
-A personal tracker for daily to-dos, hobbies, a garage, and an armory —
+A personal tracker for daily to-dos, hobbies, and user-defined Trackers —
 each with recurring maintenance tasks that also show up on the to-do list.
 React + Vite + MUI, backed by Supabase (Postgres + real email/password Auth).
 
@@ -10,10 +10,10 @@ GitHub Actions on every push to `master` — see [Deployment](#deployment).
 ## Getting started
 
 1. Create a Supabase project, then in its SQL Editor run
-   [`supabase/migrations/001_initial_schema.sql`](supabase/migrations/001_initial_schema.sql)
-   — the whole schema in one file. Safe to re-run against an
-   already-migrated database too (every statement is a no-op if it's
-   already applied).
+   [`supabase/migrations/001_initial_schema.sql`](supabase/migrations) —
+   the whole schema (core tables + Trackers) in one file. Safe to re-run
+   against an already-migrated database too (every statement is a no-op if
+   it's already applied).
 2. Copy `.env.example` to `.env.local` and fill in your project's URL and
    anon key (Project Settings > API in the Supabase dashboard).
 3. In the Supabase dashboard under Authentication > URL Configuration, add
@@ -35,9 +35,9 @@ Run `npm test` for the automated test suite (Vitest) — see
 
 - **Overview** — the landing page (click "Personal Tracker" in the nav bar,
   or just log in). Shows every task across every tab — plain to-dos plus
-  Garage/Armory/Hobbies tasks — collectively, using the same tabs/filter/
-  list UI as To-Do. Read-only with respect to creating tasks; each tab
-  still owns adding its own.
+  Hobbies/Tracker tasks — collectively, using the same tabs/filter/list UI
+  as To-Do. Read-only with respect to creating tasks; each tab still owns
+  adding its own.
 - **To-Do** — tasks created directly on this page (description, due date,
   priority, frequency — daily/weekly/monthly/quarterly/yearly). Recurring
   tasks auto-uncheck on a fixed schedule anchored to when the task was
@@ -45,25 +45,19 @@ Run `npm test` for the automated test suite (Vitest) — see
   week for the first reset. Click a task to open a full edit view. Any task
   (plain or entity-linked — maintenance, hobby task, ...) can also carry
   free-form tags, filterable via a "Tags" dropdown next to the frequency
-  filter, independent of the vehicle/firearm/hobby linking described below.
+  filter, independent of the hobby/tracker-item linking described below.
 - **Hobbies** — a hobby's page has a pencil-editable name/description, a
   "Hobby Tasks" section (real to-dos, generated right there, defaulting to
   One-Time frequency instead of Daily), and a "Lists" section where you
   create Maintenance / Modifications / Wishlist / Equipment lists that then
-  show up as tabs — the same tab structure as Garage/Armory. Nothing here
-  depends on any other sub-entity existing first.
-- **Garage** — vehicles (make/model/trim/color, plus an optional free-form
-  notes field — VIN, insurance renewal, whatever doesn't fit its own
-  field). Each vehicle's detail page has a Maintenance / Modifications /
-  Wishlist tab row (Maintenance shown by default); only the selected tab's
-  list — and its own add-to-list control — is on screen at a time.
-  Maintenance tasks are real to-do items under the hood (tagged with
-  `vehicleId`), so adding one here also puts it on the main To-Do page and
-  the Overview page, and vice versa. The Garage page itself also has its
-  own page-level Wishlist section, independent of any specific vehicle.
-- **Armory** — the same structure as Garage (make/model/caliber instead of
-  trim/color, notes field included too), including its own page-level
-  Wishlist section.
+  show up as tabs — the same tab structure a Tracker item uses. Nothing
+  here depends on any other sub-entity existing first.
+- **Trackers** — user-defined domains, created at runtime with no code
+  change: name a Tracker (e.g. "Guitars"), define its own core fields
+  (whatever you want, each with its own required/type setting), then add
+  items and give each one Maintenance/Modifications/Wishlist/Equipment
+  lists, same as a Hobby. Every Tracker you create shows up as its own nav
+  bar entry automatically.
 - **Finances** — a tab row: **Owe** (bills/debts — name, description, $
   owed, optional months left, priority defaulting to Low) and **Wish to
   Purchase** (name, description, item amount, amount saved — the amount-
@@ -76,10 +70,10 @@ Run `npm test` for the automated test suite (Vitest) — see
 - **Profile** — email (read-only), optional username, first name, last
   name, reached by clicking the nav-bar identity. Setting a username makes
   it show in the nav bar instead of your email.
-- **Nav bar** — at `md` and up: hover over Garage/Armory for a dropdown of
-  their items, hover the profile icon to reveal Log out. Below `md`: a
-  hamburger opens a drawer with plain links instead (hover doesn't work on
-  touch).
+- **Nav bar** — at `md` and up: hover over each of your Trackers for a
+  dropdown of their items, hover the profile icon to reveal Log out.
+  Below `md`: a hamburger opens a drawer with plain links instead (hover
+  doesn't work on touch).
 - **Auth** — real Supabase email/password accounts: sign up, log in, and
   "Forgot password?" (emails a reset link). Every row in every collection
   is scoped to the account that created it via Postgres row-level security,
@@ -146,14 +140,20 @@ src/
     hobbies/                  HobbiesPage, HobbyDetailPage (tasks + tabbed
                                lists), HobbyForm, HobbyListForm,
                                HobbyListEntryDetailPage
-    garage/                   GaragePage (vehicles + page-level Wishlist),
-                               VehicleForm, VehicleDetailPage (tabbed
-                               Maintenance/Modifications/Wishlist),
-                               modification/wishlist detail pages
-    armory/                   Mirrors garage/ (firearms instead of vehicles)
     purchases/                PurchasesPage ("Finances" tab: Owe + Wish to
                                Purchase, each its own Section/Form/
                                ItemDetailPage trio)
+    trackers/                 TrackerTypesPage (list of your Trackers),
+                               TrackerTypeForm, TrackerTypeDetailPage
+                               (rename/delete the type, manage its Fields
+                               and Items), TrackerItemForm (the dynamic
+                               form — one input per current Field),
+                               TrackerItemDetailPage (tabbed Lists),
+                               TrackerItemListEntryDetailPage. Reuses
+                               HobbyListForm and hobbyListTypes.js from
+                               features/hobbies/ directly rather than
+                               duplicating them — see "Why it's built this
+                               way"
     profile/                  ProfilePage
     auth/
       LoginPage.jsx, SignupPage.jsx, ForgotPasswordPage.jsx,
@@ -161,21 +161,26 @@ src/
   components/
     layout/
       NavBar.jsx, ProtectedRoute.jsx, NavDropdownItem.jsx,
-      GarageNavItem.jsx, ArmoryNavItem.jsx, UserNavMenu.jsx
+      TrackerNavItem.jsx, UserNavMenu.jsx
     common/
       Shared building blocks reused across features — see below.
 supabase/
-  migrations/                 001_initial_schema.sql — the whole schema:
-                              every table, owner-scoped RLS from creation,
-                              the profiles table + its trigger, todos.tags,
-                              the two notes columns. Was four separate
-                              incremental migrations at one point; folded
-                              back into one file now that they're all long
-                              since applied to production (see its own
-                              header, and "Why it's built this way" below,
-                              for the history). Every statement is safe to
-                              re-run (Supabase's GitHub integration replays
-                              this against preview branches cloned from
+  migrations/                 001_initial_schema.sql — the whole schema in
+                              one file: every table (including the
+                              Trackers feature's 5 tables), owner-scoped
+                              RLS from creation, the profiles table + its
+                              trigger, todos.tags, the two notes columns.
+                              Used to be several separate incremental
+                              migrations (four for the original core
+                              schema, then a separate one for Trackers);
+                              folded back into one file now that they're
+                              all long since applied to production (see
+                              its own header, and "Why it's built this
+                              way" below, for the history — including
+                              Garage/Armory, which this schema used to also
+                              have). Every statement is safe to re-run
+                              (Supabase's GitHub integration replays it
+                              against preview branches cloned from
                               production, which already has it applied)
 public/
   404.html                    GitHub Pages SPA-routing redirect (see
@@ -195,27 +200,33 @@ public/
   ends with.
 - **Edit-in-place**: `EditableDetails` swaps a read-only summary for a form;
   its header shows a pencil (edit) and, if `onDelete` is passed, a red X
-  (delete) in the upper-right corner — used for a vehicle/armory item's
-  core fields (pencil + delete) and a hobby's name/description (pencil
-  only, since hobbies delete from the Hobbies list page instead).
+  (delete) in the upper-right corner — used for a tracker item's core
+  fields (pencil + delete) and a hobby's name/description (pencil only,
+  since hobbies delete from the Hobbies list page instead). `formProps` is
+  spread onto the form for the rare case where it needs more than
+  `{initialValues, onSubmit, submitLabel, onCancel}` — used by
+  `TrackerItemDetailPage` to pass `TrackerItemForm` its field schema.
   `SimpleItemDetailPage` (modification/wishlist item edit views) and
   `TaskDetailPage` follow the same red-X-in-header pattern for delete, with
   a grey Cancel X inline next to Save.
 - **Related-list tabs**: `RelatedListTabs` renders a row of tabs where only
-  the selected tab's content is mounted — used for a vehicle/armory item's
+  the selected tab's content is mounted — used for a tracker item's
   Maintenance / Modifications / Wishlist lists, a hobby's user-created
   lists, and the Finances page's Owe / Wish to Purchase tabs, so each tab's
   add-to-list control only shows and works for the list currently selected.
 - **`SimpleListSection`/`MaintenanceSection`**: the actual tab content (or,
   with `showHeading`, a standalone section with a visible title — used for
-  a hobby's "Hobby Tasks" and Garage/Armory's page-level Wishlist).
-  `MaintenanceSection` accepts `defaultFrequency` to change what the add
-  form starts on (Hobby Tasks default to One-Time instead of Daily).
+  a hobby's "Hobby Tasks"). `MaintenanceSection` accepts `defaultFrequency`
+  to change what the add form starts on (Hobby Tasks default to One-Time
+  instead of Daily), and `readOnlySchedule` to render frequency/day as
+  plain secondary text instead of inline Select controls (used by Tracker
+  item Maintenance lists).
 - **Delete confirmation**: `ConfirmDeleteButton` wraps any delete trigger
   with a confirmation dialog — used everywhere something can be deleted.
 - **List rendering**: `NavigableRowList` (click to drill in),
   `ChecklistRowList` (checkbox, no navigation), `MaintenanceTaskList`
-  (checkbox + inline frequency/day controls) — all three delete through
+  (checkbox + inline frequency/day controls, or read-only secondary text —
+  see `readOnlySchedule` above) — all three delete through
   `ConfirmDeleteButton`.
 - **Reusable forms**: `SingleFieldForm` (one text field), `SimpleItemForm`
   + `SimpleItemDetailPage` (name + detail, used for modifications/wishlist
@@ -239,8 +250,8 @@ the new adapter implements the same four methods: `getAll(key)`,
 `create(key, item)`, `update(key, id, updates)`, `remove(key, id)`.
 
 **One collection key = one table, no manual mapping.** Every feature's
-collection key is camelCase (`garageVehicles`, `oweItems`, ...); every
-Postgres table/column is snake_case (`garage_vehicles`, `owe_items`,
+collection key is camelCase (`trackerItems`, `oweItems`, ...); every
+Postgres table/column is snake_case (`tracker_items`, `owe_items`,
 `trim_level`, ...). `supabaseAdapter.js` converts both directions
 generically (`toSnakeCase`/`toCamelCase` on every object key, and on the
 collection key itself to get the table name), so a brand new collection
@@ -273,26 +284,25 @@ table below still has a `drop policy if exists "allow all - X"` line
 (a no-op today) as cheap, permanent insurance against the same policy name
 ever being reintroduced by something else.
 
-**Lists share one hook.** Todos, hobbies/hobby lists/list entries, vehicles,
-firearms, modifications, and wishlist items are all just "collections" with
-different item shapes. `useCollection(key)` gives any feature loading state
-+ add/update/remove for free.
+**Lists share one hook.** Todos, hobbies/hobby lists/list entries, tracker
+types/fields/items/lists/entries, and Finances' owe/wish-to-purchase items
+are all just "collections" with different item shapes. `useCollection(key)`
+gives any feature loading state + add/update/remove for free.
 
 **To-Do and Overview share one board.** Both pages fetch the full `todos`
 collection and render `TodoBoard` (tabs, frequency filter, sorted list).
-TodoPage filters to tasks with no `vehicleId`/`armoryItemId`/`hobbyId`
-before handing them to the board and passes `onAddTodo`; OverviewPage
-passes the unfiltered list and omits `onAddTodo`, which hides `TodoBoard`'s
-add form — so creating a task always happens on the tab that owns it, while
+TodoPage filters to tasks with no `hobbyId`/`trackerItemId` before handing
+them to the board and passes `onAddTodo`; OverviewPage passes the
+unfiltered list and omits `onAddTodo`, which hides `TodoBoard`'s add
+form — so creating a task always happens on the tab that owns it, while
 Overview stays a pure read-through.
 
 **A hobby's "maintenance-type list" tasks and its own "Hobby Tasks" are
 both just `todos`, distinguished by which id fields are set.** A task
 belongs to a hobby directly if it has `hobbyId` but no `hobbyListId`; it
-belongs to one of the hobby's Maintenance-type lists if it has both.
-Garage/Armory maintenance tasks follow the same idea with
-`vehicleId`/`armoryItemId` (there's only ever one Maintenance list per
-vehicle/firearm, so no extra list-id field is needed there).
+belongs to one of the hobby's Maintenance-type lists if it has both. A
+Tracker item's Maintenance-type lists follow the same idea with
+`trackerItemId`/`trackerItemListId` — see the Trackers section below.
 
 **Free-form tags are a separate, simpler mechanism layered on top of that
 entity-linking scheme, not a replacement for it.** `todos.tags` is a plain
@@ -306,23 +316,103 @@ variants don't each become their own filter option.
 `useTodoFilters.availableTags` derives the filter dropdown's options
 straight from whatever tags are actually present in the current `todos`
 list — no separate "list all tags" query. Because `tags` lives on the same
-`todos` row as `vehicleId`/`hobbyId`/etc., an entity-linked task (a
+`todos` row as `hobbyId`/`trackerItemId`/etc., an entity-linked task (a
 maintenance item, a hobby task) can carry free-form tags too, exactly like
 a plain to-do — `TaskDetailPage` reuses `TodoForm` for every task
 regardless of origin, so this needed no extra wiring.
 
-**Only `GarageVehicle`/`ArmoryItem` got a dedicated `notes` field —
-nowhere else did.** Every other entity with a detail page already
-had an equivalent freeform text box (`SimpleItemForm`'s `detail` field for
-modifications/wishlist items/hobby list entries; `description` on
-`OweItem`/`WishToPurchaseItem`/`Hobby`) before this was added — giving
-those a second, identically-shaped field would just be a redundant UI
-element with no distinct purpose. Vehicles and firearms were the only two
-with no freeform field at all (just make/model/trim-or-caliber/color), so
-that's the one real gap this closes. If a future field is genuinely
-distinct from an entity's existing freeform text (e.g. actual file
-attachments — see the Roadmap's Feature Builds section below), that's a
-different feature, not more of this one.
+**Trackers replaced Garage and Armory, which used to be built-in, fixed
+domains (make/model/trim/color for vehicles, make/model/caliber for
+firearms).** Trackers were built specifically to be able to reproduce that
+shape at runtime with no code deploy, and once that was proven out, Garage
+and Armory were removed in favor of it — their tables (and the `todos`
+columns that referenced them) were dropped from production, and
+`001_initial_schema.sql` no longer creates or references them at all (see
+its header). A Tracker's fields are data, not hardcoded JSX:
+`tracker_fields` rows edited as a single set of pills in
+`TrackerTypeForm`'s Fields input (same
+Autocomplete-chip pattern as `TodoForm`'s Tags field), both when first
+naming the tracker and again any time via the pencil icon on
+`TrackerTypeDetailPage` (there's no standalone Fields list on that page —
+editing the type and editing its fields are the same action) —
+`TrackerItemForm.jsx` renders whichever fields the type currently has, one
+`TextField` per field, instead of hardcoded inputs.
+
+A tracker type also has its own optional `item_name_label`
+(`TrackerTypeForm`'s "Name for Tracker Item" pill — click it to reveal a
+text input, blur/Enter to collapse back to a pill) — purely a display
+relabel of `TrackerItemForm`'s Title field (e.g. "Guitar Name" instead of
+"Title") for that type's items. It's just a caption swap: the value still
+lives in `tracker_items.title` either way, so there's nothing to migrate
+if it's changed or left blank later. Unlike the Fields pills, it has no
+required/type dialog — the item's title is already always required and
+always text, so that editor wouldn't mean anything here.
+
+**A tracker field's `key` is the field's own `id`, never a label-derived
+slug.** `tracker_items.field_values` is a jsonb object; each field's
+column-equivalent is looked up by `tracker_fields.id` (a uuid), not by its
+`label` text. Each field pill also carries `required` (checkbox) and
+`fieldType` (string/number) — click a pill (not its delete X) to open a
+small dialog and edit those two; `TrackerItemForm` reads them to drop the
+"(optional)" suffix and block submit on an empty required field, and to
+render a `type="number"` TextField instead of text. Neither changes how
+the value is stored — `field_values` is jsonb text either way — they're
+pure form-behavior metadata read at render/submit time.
+
+The pill editor hands the whole set back as `fieldDefs`
+(`{label, required, fieldType}` per pill), so
+`TrackerTypeDetailPage.handleSaveType` diffs it against the type's current
+fields *by label* (case-insensitive, same as `normalizeTags`): a label
+left untouched keeps its existing row — and so its id, and so any item
+data already keyed by it — while a label that disappears is deleted and a
+new one is inserted fresh; a label present in both gets `required`/
+`fieldType` written back onto its existing row if either changed (that's
+what a pill click's dialog actually persists). In other words a pure
+rename (delete `"Color"` pill, add `"Colour"` pill) is *not* id-preserving
+from the UI's perspective, even though the underlying id-as-key scheme is
+what makes that safe to do at all: it just looks like
+delete-old-field-add-new-field, same as it would with a plain tag list.
+That's also why deleting a field can't accidentally resurrect old data: a
+field's `id` is never reused, so a re-added field with the same label
+gets a fresh id and starts with nothing. The dynamic form and the
+read-only summary both only ever render keys present in the *current*
+`tracker_fields` list, so a deleted field's leftover value in the jsonb
+blob just becomes permanently invisible rather than cleaned up — cheap,
+and correct given the id-as-key design above.
+
+**Every tracker type's items share one `tracker_items` table, filtered
+client-side by `trackerTypeId`** — the same idiom `todos` already uses to
+serve more than one owner (`hobbyId`/`hobbyListId`), extended to a third
+and fourth (`trackerItemId`/`trackerItemListId`) rather than inventing a
+new pattern. `TodoPage.jsx`'s "tasks that belong to nothing else" filter
+had to learn about the new column for the same reason it already knows
+about the other two — a maintenance task under a Tracker item would
+otherwise leak onto the plain To-Do page.
+
+**A tracker item's Lists reuse Hobbies' Lists mechanism directly —
+`HobbyListForm.jsx` and `constants/hobbyListTypes.js` are imported as-is
+from `features/hobbies/`, not duplicated** — both were already fully
+generic (`onSubmit({name, type})`, no hobby-specific coupling), so there
+was nothing to change to reuse them. The backing tables
+(`tracker_item_lists`/`tracker_item_list_entries`) are new, parallel
+tables that mirror `hobby_lists`/`hobby_list_entries` exactly, rather than
+generalizing those existing tables to accept a second kind of owner — a
+deliberate call to keep zero risk to stable, working Hobby data, accepting
+some schema duplication as the cost of that isolation.
+
+**Routes are by id, not a derived slug** (`/trackers/:typeId`,
+`/trackers/:typeId/:itemId`) — renaming a Tracker or an item never breaks
+a link, and `App.jsx` only needs *one* generic route pair total for every
+Tracker a user creates, because `TrackerTypeDetailPage`/
+`TrackerItemDetailPage` look up their field/list config from the database
+at render time rather than having it baked into a per-type component (the
+old, one-hardcoded-component-per-domain approach Garage/Armory used). The
+nav bar works the same way: `NavDropdownItem.jsx` has an optional
+`filterItem` prop (applied to its fetched items before rendering, since
+`trackerItems` is a table shared by every tracker type) so one
+`TrackerNavItem` component, rendered once per row in `trackerTypes`, can
+serve any number of user-created domains instead of needing one hardcoded
+nav component per domain.
 
 **Auth is real Supabase Auth (email/password).** `AuthContext.jsx` restores
 whatever session Supabase already persisted on load, then stays in sync via
@@ -376,13 +466,13 @@ fresh (React's own recommended reset trick, avoiding a `componentDidUpdate`
 
 **Every route is its own lazy chunk.** `App.jsx` wraps each page import in
 `React.lazy` (with a `.then(m => ({ default: m.X }))` step, since every page
-is a named export, not a default one) instead of importing all ~20 upfront.
-A single `Suspense` around `<Routes>` — inside the `ErrorBoundary`, so a
-chunk-load failure is caught the same way a rendering error is — shows a
-centered spinner while a route's own JS is fetched the first time it's
-visited. Before this, every page was eagerly bundled into one ~780 kB
-chunk; each page's own dependencies (MUI pieces it alone uses, etc.) now
-ship only when that page is actually reached.
+is a named export, not a default one) instead of importing all of them
+upfront. A single `Suspense` around `<Routes>` — inside the
+`ErrorBoundary`, so a chunk-load failure is caught the same way a
+rendering error is — shows a centered spinner while a route's own JS is
+fetched the first time it's visited. Before this, every page was eagerly
+bundled into one large chunk; each page's own dependencies (MUI pieces it
+alone uses, etc.) now ship only when that page is actually reached.
 
 **Pure logic and the CRUD hook have automated tests; UI doesn't (yet).**
 `npm test` runs Vitest against `recurrence.js` (reset-boundary math with
@@ -414,13 +504,13 @@ from being submitted more than once concurrently.
 **Nav-bar hover dropdowns use plain CSS `:hover`, not MUI `Menu`.** An
 earlier attempt with `Menu` flickered because its modal overlay renders on
 top of the trigger button once open, which makes the browser think the
-mouse left and immediately re-triggers enter/leave. `GarageNavItem` /
-`ArmoryNavItem` / `UserNavMenu` instead reveal a plain `Paper` that lives in
-the same DOM subtree as the trigger — no portal, no flicker.
+mouse left and immediately re-triggers enter/leave. `NavDropdownItem` /
+`UserNavMenu` instead reveal a plain `Paper` that lives in the same DOM
+subtree as the trigger — no portal, no flicker.
 
 **The mobile nav is a second, parallel implementation, not a responsive
-version of the desktop one.** `GarageNavItem`/`ArmoryNavItem`'s hover
-dropdowns fundamentally don't work on touch (no hover event), so `NavBar.jsx`
+version of the desktop one.** `NavDropdownItem`'s hover dropdowns
+fundamentally don't work on touch (no hover event), so `NavBar.jsx`
 renders the existing `Stack` only at `md` and up and an entirely separate
 `Drawer` below it, rather than trying to make one component handle both
 input models. `RelatedListTabs` takes a lighter touch on the same problem:
@@ -456,7 +546,9 @@ add `-- --watch` if you want it to). Covered so far: `utils/recurrence.js`,
 `utils/tags.js`, `services/storage/caseConversion.js`,
 `hooks/useCollection.js`, `hooks/useRecurringReset.js`, and
 `features/todos/useTodoFilters.js` — see the "Why it's built this way"
-notes above for what each one asserts. No component/page tests yet.
+notes above for what each one asserts. No component/page tests yet, so
+lint/test/build passing is proof the code compiles and existing logic
+isn't broken — it isn't proof a new feature's UI actually works.
 
 ## Deployment
 
@@ -537,7 +629,7 @@ is clean today — these keep it that way as it grows.
 builds on stability work above rather than competing with it.
 
 - **Dashboard/stats on Overview** — completion rate over time, streaks,
-  most-active hobby, upcoming maintenance across Garage/Armory. The
+  most-active hobby, upcoming maintenance across Hobbies/Trackers. The
   aggregation plumbing already exists (Overview reads the full cross-tab
   list); this is mostly a display layer on top.
 - **Search across collections** — likely a client-side filter first, given
@@ -572,10 +664,9 @@ builds on stability work above rather than competing with it.
   wrapper are the only items still open there.
 - **Free-form tags on to-dos are done** (see "Why it's built this way"
   above) — pruned from Feature Builds above.
-- **Notes on individual items is partly done**: a `notes` field on Garage
-  vehicles and Armory items — the only two entities that had no equivalent
-  freeform field already (see "Why it's built this way"). File attachments
-  are still open, reworded above as its own item.
+- **User-defined Trackers are done**, replacing the old fixed Garage/Armory
+  domains entirely (see "Why it's built this way" above) — pruned from
+  Feature Builds above.
 - **The migrations folder was folded back down to a single
   `001_initial_schema.sql`** (see its own header and "Why it's built this
   way" above) — it had grown to five files (four incremental on top of the

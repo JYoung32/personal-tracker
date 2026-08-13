@@ -13,7 +13,7 @@ import { FormActions } from './FormActions';
 
 /**
  * Form for adding a maintenance task that's also a real to-do item (see
- * MaintenanceSection usage in VehicleDetailPage / ArmoryItemDetailPage).
+ * MaintenanceSection usage in HobbyDetailPage / TrackerItemDetailPage).
  * Calls onSubmit({ text, frequency, recurringDay }) and resets itself. Pass
  * onCancel to get a circular X inline next to the Add button (used inside
  * an AddFormPanel add flow). Add/Cancel sit centered on their own line

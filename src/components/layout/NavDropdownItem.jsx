@@ -8,17 +8,24 @@ import { useCollection } from '../../hooks/useCollection';
 
 /**
  * A nav link with a hover dropdown listing items from a collection, so you
- * can jump straight to one (e.g. Garage -> a specific vehicle).
+ * can jump straight to one (e.g. a Tracker -> a specific item).
  *
  * Uses a plain CSS :hover reveal (rather than MUI's Menu/Popover) because
  * Menu's modal overlay sits on top of the anchor button once open, which
  * causes the browser to think the mouse has left the button and immediately
  * re-fires enter/leave — a flicker loop. A same-DOM-subtree Paper has no
  * such overlay, so hovering continuously through Button -> Paper is stable.
+ *
+ * Pass `filterItem` when `collectionKey` names a table shared by more than
+ * one owner (e.g. trackerItems, shared by every tracker type) — applied to
+ * the fetched items before rendering, so the dropdown only lists the ones
+ * that belong here. Omit it when the collection already belongs wholly to
+ * this nav item.
  */
-export function NavDropdownItem({ label, path, collectionKey, getItemLabel, getItemPath, emptyMessage }) {
+export function NavDropdownItem({ label, path, collectionKey, filterItem, getItemLabel, getItemPath, emptyMessage }) {
   const navigate = useNavigate();
-  const { items } = useCollection(collectionKey);
+  const { items: allItems } = useCollection(collectionKey);
+  const items = filterItem ? allItems.filter(filterItem) : allItems;
   const dropdownClass = `nav-dropdown-${collectionKey}`;
 
   return (

@@ -14,7 +14,7 @@ import { ConfirmDeleteButton } from './ConfirmDeleteButton';
 /**
  * Full edit view for a single simple-list item (a modification or wishlist
  * entry). Generic over which collection it edits and where "back" goes, so
- * Garage and Armory can each supply their own thin route wrapper.
+ * Hobbies and Trackers can each supply their own thin route wrapper.
  */
 export function SimpleItemDetailPage({ id, collectionKey, backTo, backLabel, title, notFoundMessage }) {
   const navigate = useNavigate();

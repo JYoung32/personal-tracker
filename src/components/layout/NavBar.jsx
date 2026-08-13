@@ -15,21 +15,30 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useProfile } from '../../hooks/useProfile';
-import { GarageNavItem } from './GarageNavItem';
-import { ArmoryNavItem } from './ArmoryNavItem';
+import { useCollection } from '../../hooks/useCollection';
+import { TrackerNavItem } from './TrackerNavItem';
 import { UserNavMenu } from './UserNavMenu';
 
 const NAV_LINKS = [
   { label: 'To-Do', path: '/todos' },
   { label: 'Hobbies', path: '/hobbies' },
-  { label: 'Armory', path: '/armory' },
-  { label: 'Garage', path: '/garage' },
-  { label: 'Finances', path: '/purchases' },
+  { label: 'Trackers', path: '/trackers' },
 ];
+
+// Rendered after every user-created Tracker's own nav entry (see
+// trackerTypes.map below) rather than living in NAV_LINKS, so it always
+// comes after Trackers and whatever tabs a user's Trackers add — not
+// wherever it'd otherwise fall in the static list.
+const FINANCES_LINK = { label: 'Finances', path: '/purchases' };
 
 export function NavBar() {
   const { isAuthenticated, logout, user } = useAuth();
   const { profile } = useProfile();
+  // User-created Trackers (see src/features/trackers/) each get their own
+  // nav entry, appended after the static NAV_LINKS — same low-risk "fetch
+  // regardless of auth state" pattern useProfile() already uses here; RLS
+  // just returns an empty list pre-login.
+  const { items: trackerTypes } = useCollection('trackerTypes');
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -50,21 +59,23 @@ export function NavBar() {
           <>
             {/* md and up: today's hover-dropdown nav, unchanged */}
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center', display: { xs: 'none', md: 'flex' } }}>
-              {NAV_LINKS.map((link) => {
-                if (link.path === '/garage') return <GarageNavItem key={link.path} />;
-                if (link.path === '/armory') return <ArmoryNavItem key={link.path} />;
-                return (
-                  <Button key={link.path} component={RouterLink} to={link.path} color="inherit">
-                    {link.label}
-                  </Button>
-                );
-              })}
+              {NAV_LINKS.map((link) => (
+                <Button key={link.path} component={RouterLink} to={link.path} color="inherit">
+                  {link.label}
+                </Button>
+              ))}
+              {trackerTypes.map((type) => (
+                <TrackerNavItem key={type.id} type={type} />
+              ))}
+              <Button component={RouterLink} to={FINANCES_LINK.path} color="inherit">
+                {FINANCES_LINK.label}
+              </Button>
               <UserNavMenu username={profile.username || user?.email} onLogout={handleLogout} />
             </Stack>
 
             {/* below md: hamburger opens a drawer instead — hover doesn't
-                work on touch, so this also replaces the per-item Garage/
-                Armory dropdowns with plain links to those pages */}
+                work on touch, so this also replaces the per-item Tracker
+                dropdowns with plain links to those pages */}
             <IconButton
               color="inherit"
               aria-label="Open menu"
@@ -87,6 +98,23 @@ export function NavBar() {
                       <ListItemText primary={link.label} />
                     </ListItemButton>
                   ))}
+                  {trackerTypes.map((type) => (
+                    <ListItemButton
+                      key={type.id}
+                      component={RouterLink}
+                      to={`/trackers/${type.id}`}
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      <ListItemText primary={type.name} />
+                    </ListItemButton>
+                  ))}
+                  <ListItemButton
+                    component={RouterLink}
+                    to={FINANCES_LINK.path}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <ListItemText primary={FINANCES_LINK.label} />
+                  </ListItemButton>
                 </List>
                 <Divider />
                 <List>
