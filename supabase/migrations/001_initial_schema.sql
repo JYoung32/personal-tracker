@@ -202,6 +202,7 @@ create table if not exists todos (
   due_date date,
   frequency text not null default 'daily',
   recurring_day smallint,
+  recurring_week_of_month smallint,
   priority text not null default 'medium',
   completed boolean not null default false,
   completed_date date,
@@ -215,6 +216,16 @@ create table if not exists todos (
   created_at timestamptz not null default now(),
   updated_at timestamptz
 );
+-- retroactive-safe for the same reason as tracker_fields.select_options
+-- above — todos already exists in production. recurring_week_of_month
+-- (1-4 for the 1st-4th occurrence, -1 for "last") pairs with recurring_day
+-- to pin a monthly task to an "Nth weekday of the month" (e.g. "2nd
+-- Tuesday") — see recurrence.js's ordinalMonthlyResetBoundary. Any
+-- existing monthly task with only recurring_day set (no
+-- recurring_week_of_month) is left as-is here; the app treats that
+-- combination as "no day preference" going forward rather than guessing
+-- at a reinterpretation (see taskOptions.js/recurrence.js).
+alter table todos add column if not exists recurring_week_of_month smallint;
 create index if not exists todos_hobby_id_idx on todos (hobby_id);
 create index if not exists todos_hobby_list_id_idx on todos (hobby_list_id);
 create index if not exists todos_tracker_item_id_idx on todos (tracker_item_id);

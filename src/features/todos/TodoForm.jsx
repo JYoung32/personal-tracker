@@ -10,20 +10,30 @@ import {
   FREQUENCY_OPTIONS,
   PRIORITY_OPTIONS,
   DAY_OPTIONS,
+  WEEK_OF_MONTH_OPTIONS,
   DEFAULT_FREQUENCY,
   DEFAULT_PRIORITY,
   supportsRecurringDay,
+  supportsRecurringWeekOfMonth,
 } from '../../constants/taskOptions';
 import { FormActions } from '../../components/common/FormActions';
 import { normalizeTags } from '../../utils/tags';
 
 /**
  * Form for adding or editing a to-do. Calls onSubmit({ text, description, dueDate, frequency,
- * recurringDay, priority, tags }). In "add" mode (no initialValues) it clears itself after
- * submit. Pass initialValues (an existing todo) to prefill for editing — completed/completedDate
- * aren't part of the form and are left untouched by the caller's merge. Pass onCancel to get a
- * Cancel (X) button inline next to the submit button (see FormActions) — used when this form is
- * inside an AddFormPanel add flow; omitted for standalone edit views like TaskDetailPage.
+ * recurringDay, recurringWeekOfMonth, priority, tags }). In "add" mode (no initialValues) it
+ * clears itself after submit. Pass initialValues (an existing todo) to prefill for editing —
+ * completed/completedDate aren't part of the form and are left untouched by the caller's merge.
+ * Pass onCancel to get a Cancel (X) button inline next to the submit button (see FormActions) —
+ * used when this form is inside an AddFormPanel add flow; omitted for standalone edit views like
+ * TaskDetailPage.
+ *
+ * "Repeats on" is one of two shapes depending on frequency (see taskOptions.js): weekly gets a
+ * plain weekday picker (recurringDay alone — 7 days later always lands on the same weekday, so
+ * that's meaningful by itself); monthly gets a week-of-month + weekday pair (recurringDay +
+ * recurringWeekOfMonth together, e.g. "2nd Tuesday" — see recurrence.js's
+ * ordinalMonthlyResetBoundary). The pair is all-or-nothing: picking only one of the two submits
+ * neither, rather than a half-set preference. Quarterly/yearly/daily/one-time show neither.
  */
 export function TodoForm({ initialValues, onSubmit, submitLabel = 'Add', onCancel }) {
   const [text, setText] = useState(initialValues?.text ?? '');
@@ -31,14 +41,20 @@ export function TodoForm({ initialValues, onSubmit, submitLabel = 'Add', onCance
   const [dueDate, setDueDate] = useState(initialValues?.dueDate ?? '');
   const [frequency, setFrequency] = useState(initialValues?.frequency ?? DEFAULT_FREQUENCY);
   const [recurringDay, setRecurringDay] = useState(initialValues?.recurringDay ?? '');
+  const [recurringWeekOfMonth, setRecurringWeekOfMonth] = useState(
+    initialValues?.recurringWeekOfMonth ?? ''
+  );
   const [priority, setPriority] = useState(initialValues?.priority ?? DEFAULT_PRIORITY);
   const [tags, setTags] = useState(initialValues?.tags ?? []);
 
   const showRecurringDay = supportsRecurringDay(frequency);
+  const showRecurringWeekOfMonth = supportsRecurringWeekOfMonth(frequency);
+  const weekOfMonthPaired = showRecurringWeekOfMonth && recurringDay !== '' && recurringWeekOfMonth !== '';
 
   function handleFrequencyChange(value) {
     setFrequency(value);
-    if (!supportsRecurringDay(value)) setRecurringDay('');
+    if (!supportsRecurringDay(value) && !supportsRecurringWeekOfMonth(value)) setRecurringDay('');
+    if (!supportsRecurringWeekOfMonth(value)) setRecurringWeekOfMonth('');
   }
 
   function handleSubmit(e) {
@@ -51,7 +67,8 @@ export function TodoForm({ initialValues, onSubmit, submitLabel = 'Add', onCance
       description: description.trim() || null,
       dueDate: dueDate || null,
       frequency,
-      recurringDay: showRecurringDay && recurringDay !== '' ? recurringDay : null,
+      recurringDay: showRecurringDay && recurringDay !== '' ? recurringDay : weekOfMonthPaired ? recurringDay : null,
+      recurringWeekOfMonth: weekOfMonthPaired ? recurringWeekOfMonth : null,
       priority,
       tags: normalizeTags(tags),
     });
@@ -62,6 +79,7 @@ export function TodoForm({ initialValues, onSubmit, submitLabel = 'Add', onCance
       setDueDate('');
       setFrequency(DEFAULT_FREQUENCY);
       setRecurringDay('');
+      setRecurringWeekOfMonth('');
       setPriority(DEFAULT_PRIORITY);
       setTags([]);
     }
@@ -219,6 +237,69 @@ export function TodoForm({ initialValues, onSubmit, submitLabel = 'Add', onCance
               </MenuItem>
             ))}
           </Select>
+        </Box>
+      )}
+
+      {showRecurringWeekOfMonth && (
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              component="label"
+              htmlFor="todo-recurring-week"
+              align="center"
+              sx={{ display: 'block', mb: 0.5 }}
+            >
+              Repeats on (optional)
+            </Typography>
+            <Select
+              id="todo-recurring-week"
+              variant="standard"
+              value={recurringWeekOfMonth}
+              onChange={(e) => setRecurringWeekOfMonth(e.target.value)}
+              displayEmpty
+              fullWidth
+            >
+              <MenuItem value="">
+                <em>Any week</em>
+              </MenuItem>
+              {WEEK_OF_MONTH_OPTIONS.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              component="label"
+              htmlFor="todo-recurring-week-day"
+              align="center"
+              sx={{ display: 'block', mb: 0.5 }}
+            >
+              &nbsp;
+            </Typography>
+            <Select
+              id="todo-recurring-week-day"
+              variant="standard"
+              value={recurringDay}
+              onChange={(e) => setRecurringDay(e.target.value)}
+              displayEmpty
+              fullWidth
+            >
+              <MenuItem value="">
+                <em>Any day</em>
+              </MenuItem>
+              {DAY_OPTIONS.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
         </Box>
       )}
 

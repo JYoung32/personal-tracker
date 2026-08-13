@@ -8,7 +8,7 @@ import Divider from '@mui/material/Divider';
 import { useCollection } from '../../hooks/useCollection';
 import { useRecurringReset } from '../../hooks/useRecurringReset';
 import { toggleCompletionFields } from '../../utils/recurrence';
-import { supportsRecurringDay } from '../../constants/taskOptions';
+import { supportsRecurringDay, supportsRecurringWeekOfMonth } from '../../constants/taskOptions';
 import { isKnownHobbyListType } from '../../constants/hobbyListTypes';
 import { MaintenanceSection } from '../../components/common/MaintenanceSection';
 import { SimpleListSection } from '../../components/common/SimpleListSection';
@@ -73,7 +73,7 @@ export function HobbyDetailPage() {
     [todos, hobbyId]
   );
 
-  function handleAddHobbyTask({ text, frequency, recurringDay }) {
+  function handleAddHobbyTask({ text, frequency, recurringDay, recurringWeekOfMonth }) {
     addTodo({
       text,
       description: null,
@@ -82,6 +82,7 @@ export function HobbyDetailPage() {
       dueDate: null,
       frequency,
       recurringDay,
+      recurringWeekOfMonth,
       priority: 'medium',
       hobbyId,
       sourceLabel: hobby?.name ?? '',
@@ -93,15 +94,23 @@ export function HobbyDetailPage() {
   }
 
   function handleTaskFrequencyChange(id, frequency) {
-    updateTodo(id, { frequency, ...(supportsRecurringDay(frequency) ? {} : { recurringDay: null }) });
+    updateTodo(id, {
+      frequency,
+      ...(supportsRecurringDay(frequency) || supportsRecurringWeekOfMonth(frequency) ? {} : { recurringDay: null }),
+      ...(supportsRecurringWeekOfMonth(frequency) ? {} : { recurringWeekOfMonth: null }),
+    });
   }
 
   function handleTaskRecurringDayChange(id, recurringDay) {
     updateTodo(id, { recurringDay });
   }
 
+  function handleTaskRecurringWeekOfMonthChange(id, recurringWeekOfMonth) {
+    updateTodo(id, { recurringWeekOfMonth });
+  }
+
   function handleAddMaintenanceTask(listId) {
-    return ({ text, frequency, recurringDay }) => {
+    return ({ text, frequency, recurringDay, recurringWeekOfMonth }) => {
       addTodo({
         text,
         description: null,
@@ -110,6 +119,7 @@ export function HobbyDetailPage() {
         dueDate: null,
         frequency,
         recurringDay,
+        recurringWeekOfMonth,
         priority: 'medium',
         hobbyId,
         hobbyListId: listId,
@@ -138,6 +148,7 @@ export function HobbyDetailPage() {
             onToggleComplete={handleToggleTaskComplete}
             onFrequencyChange={handleTaskFrequencyChange}
             onRecurringDayChange={handleTaskRecurringDayChange}
+            onRecurringWeekOfMonthChange={handleTaskRecurringWeekOfMonthChange}
             onDelete={removeTodo}
           />
         ),
@@ -205,6 +216,7 @@ export function HobbyDetailPage() {
             onToggleComplete={handleToggleTaskComplete}
             onFrequencyChange={handleTaskFrequencyChange}
             onRecurringDayChange={handleTaskRecurringDayChange}
+            onRecurringWeekOfMonthChange={handleTaskRecurringWeekOfMonthChange}
             onDelete={removeTodo}
           />
 

@@ -7,12 +7,19 @@ import MenuItem from '@mui/material/MenuItem';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import { FREQUENCY_OPTIONS, PRIORITY_OPTIONS, DAY_OPTIONS, supportsRecurringDay } from '../../constants/taskOptions';
+import {
+  FREQUENCY_OPTIONS,
+  PRIORITY_OPTIONS,
+  DAY_OPTIONS,
+  WEEK_OF_MONTH_OPTIONS,
+  supportsRecurringDay,
+  supportsRecurringWeekOfMonth,
+  formatRecurringDayLabel,
+} from '../../constants/taskOptions';
 import { ConfirmDeleteButton } from './ConfirmDeleteButton';
 
 const FREQUENCY_LABELS = Object.fromEntries(FREQUENCY_OPTIONS.map((opt) => [opt.value, opt.label]));
 const PRIORITY_LABELS = Object.fromEntries(PRIORITY_OPTIONS.map((opt) => [opt.value, opt.label]));
-const DAY_LABELS = Object.fromEntries(DAY_OPTIONS.map((opt) => [opt.value, opt.label]));
 
 // Same local-midnight parsing as TodoItem.jsx — dueDate is a "YYYY-MM-DD"
 // string, and parsing it directly with `new Date(...)` treats it as UTC
@@ -26,10 +33,14 @@ function parseDateOnly(dateStr) {
  * Maintenance tasks are real to-do items (see MaintenanceTaskForm). By
  * default each row exposes the same frequency / recurring-day controls
  * inline — updating either here immediately reshapes that task's reset
- * schedule wherever it's viewed (here or on the main To-Do page). Clicking
- * the row (outside the inline controls) opens the same full edit view as a
- * regular to-do. Pass `readOnlySchedule` (currently only Trackers does) to
- * swap that out for a read-only info stack under the title instead —
+ * schedule wherever it's viewed (here or on the main To-Do page). A weekly
+ * task gets a plain weekday Select (onRecurringDayChange); a monthly task
+ * gets a week-of-month + weekday pair instead (onRecurringDayChange +
+ * onRecurringWeekOfMonthChange together — see taskOptions.js's
+ * supportsRecurringDay/supportsRecurringWeekOfMonth). Clicking the row
+ * (outside the inline controls) opens the same full edit view as a regular
+ * to-do. Pass `readOnlySchedule` (currently only Trackers does) to swap
+ * that out for a read-only info stack under the title instead —
  * description, then a line for whichever of due date / frequency / priority
  * / repeats-on day are actually set, then tag chips — mirroring TodoItem's
  * row on the main To-Do page. Still editable, just from the task's own
@@ -41,6 +52,7 @@ export function MaintenanceTaskList({
   onToggleComplete,
   onFrequencyChange,
   onRecurringDayChange,
+  onRecurringWeekOfMonthChange,
   onDelete,
   emptyMessage,
   readOnlySchedule = false,
@@ -63,9 +75,7 @@ export function MaintenanceTaskList({
         const metaParts = readOnlySchedule
           ? [
               task.frequency && `Frequency: ${FREQUENCY_LABELS[task.frequency] ?? task.frequency}`,
-              supportsRecurringDay(task.frequency) &&
-                task.recurringDay != null &&
-                `Repeats on: ${DAY_LABELS[task.recurringDay]}`,
+              formatRecurringDayLabel(task) && `Repeats on: ${formatRecurringDayLabel(task)}`,
               task.priority && `Priority: ${PRIORITY_LABELS[task.priority] ?? task.priority}`,
             ].filter(Boolean)
           : [];
@@ -192,6 +202,53 @@ export function MaintenanceTaskList({
                       </MenuItem>
                     ))}
                   </Select>
+                )}
+
+                {supportsRecurringWeekOfMonth(task.frequency) && (
+                  <>
+                    <Select
+                      value={task.recurringWeekOfMonth ?? ''}
+                      onChange={(e) =>
+                        onRecurringWeekOfMonthChange(task.id, e.target.value === '' ? null : e.target.value)
+                      }
+                      onClick={(e) => e.stopPropagation()}
+                      variant="standard"
+                      disableUnderline
+                      displayEmpty
+                      size="small"
+                      sx={{ fontSize: 13, mr: 1, minWidth: 72, '& .MuiSelect-select': { py: 0.25 } }}
+                    >
+                      <MenuItem value="">
+                        <em>Any week</em>
+                      </MenuItem>
+                      {WEEK_OF_MONTH_OPTIONS.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value} sx={{ fontSize: 13 }}>
+                          {opt.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    <Select
+                      value={task.recurringDay ?? ''}
+                      onChange={(e) =>
+                        onRecurringDayChange(task.id, e.target.value === '' ? null : e.target.value)
+                      }
+                      onClick={(e) => e.stopPropagation()}
+                      variant="standard"
+                      disableUnderline
+                      displayEmpty
+                      size="small"
+                      sx={{ fontSize: 13, mr: 1, minWidth: 88, '& .MuiSelect-select': { py: 0.25 } }}
+                    >
+                      <MenuItem value="">
+                        <em>Any day</em>
+                      </MenuItem>
+                      {DAY_OPTIONS.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value} sx={{ fontSize: 13 }}>
+                          {opt.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </>
                 )}
               </>
             )}

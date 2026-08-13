@@ -40,12 +40,16 @@ Run `npm test` for the automated test suite (Vitest) — see
   adding its own.
 - **To-Do** — tasks created directly on this page (description, due date,
   priority, frequency — daily/weekly/monthly/quarterly/yearly). Recurring
-  tasks auto-uncheck on a fixed schedule anchored to when the task was
-  created (see `utils/recurrence.js`), optionally aligned to a day of the
-  week for the first reset. Click a task to open a full edit view. Any task
-  (plain or entity-linked — maintenance, hobby task, ...) can also carry
-  free-form tags, filterable via a "Tags" dropdown next to the frequency
-  filter, independent of the hobby/tracker-item linking described below.
+  tasks auto-uncheck on a schedule anchored to when the task was created
+  (see `utils/recurrence.js`). A weekly task can optionally pin its reset to
+  a day of the week; a monthly task can instead pin to an "Nth weekday of
+  the month" (e.g. "2nd Tuesday" or "Last Friday") — a genuinely different
+  schedule shape, not just a cosmetic label, since it's computed directly
+  rather than nudged onto an already-month-out date. Click a task to open a
+  full edit view. Any task (plain or entity-linked — maintenance, hobby
+  task, ...) can also carry free-form tags, filterable via a "Tags"
+  dropdown next to the frequency filter, independent of the
+  hobby/tracker-item linking described below.
 - **Hobbies** — a hobby's page has a pencil-editable name/description, a
   "Hobby Tasks" section (real to-dos, generated right there, defaulting to
   One-Time frequency instead of Daily), and a "Lists" section where you
@@ -296,6 +300,41 @@ them to the board and passes `onAddTodo`; OverviewPage passes the
 unfiltered list and omits `onAddTodo`, which hides `TodoBoard`'s add
 form — so creating a task always happens on the tab that owns it, while
 Overview stays a pure read-through.
+
+**Recurring reset math recomputes every cycle from the task's original
+creation date, never chained off the previous reset.** `recurrence.js`'s
+`currentResetBoundary` figures out the most recent scheduled reset for a
+recurring task. For monthly/quarterly/yearly, each cycle is calculated
+straight from `createdAt` (`addCycles(anchor, frequency, N)`), not from
+cycle N-1: chaining would permanently lock in any month-end/leap-day clamp
+(a task created Jan 31 would go Jan 31 → Feb 28 → Mar 28 → Apr 28 forever,
+never coming back from "the 28th"), where recomputing from the untouched
+anchor lets a later month long enough for the original day recover it
+(Jan 31 → Feb 28 → **Mar 31** → Apr 30 → **May 31**). Daily/weekly use a
+cheaper direct O(1) division instead, since a fixed number of days never
+needs clamping in the first place.
+
+**A monthly task's "repeats on" weekday means something different from
+every other frequency's.** Weekly's `recurringDay` is a plain weekday nudge
+applied once to the first reset — meaningful on its own, since 7 days later
+always lands back on the same weekday. Applying that same nudge to a
+monthly/quarterly/yearly task doesn't work the same way: the nudge lands on
+a date that's already a full cycle out, so "monthly, repeats on Monday"
+could take over five weeks to first fire, and quarterly/yearly made it
+worse. Monthly instead gets a real "Nth weekday of the month" mode (e.g.
+"2nd Tuesday", picked via `recurringDay` + a paired `recurringWeekOfMonth`:
+`1`-`4` for the 1st-4th occurrence, `-1` for "last" — a month always has at
+least 4 of any weekday, so only "last" needs its own calculation, not a
+`5`). `ordinalMonthlyResetBoundary` computes these directly rather than
+nudging, so the first reset can land within the *same* month as creation if
+that occurrence hasn't passed yet — fixing the multi-week delay rather than
+just relabeling it. Quarterly/yearly dropped the weekday picker entirely
+(an ordinal quarterly/yearly recurrence would need its own extra
+complexity for a rare combination); any task that already had a
+`recurringDay` there — or a monthly task with `recurringDay` but no
+`recurringWeekOfMonth` — is simply treated as having no day preference
+going forward, rather than the app guessing at what a leftover lone
+weekday used to mean.
 
 **A hobby's "maintenance-type list" tasks and its own "Hobby Tasks" are
 both just `todos`, distinguished by which id fields are set.** A task
@@ -655,12 +694,6 @@ not gaps.
 (splitting, testing) are done; what's left is smaller and can be picked up
 opportunistically.
 
-- **Revisit monthly/yearly interval math.** `FREQUENCY_INTERVAL_DAYS`
-  still uses fixed `30`/`365`-day approximations in `recurrence.js`, so a
-  "monthly" task anchored near month-end will drift over time. Unchanged
-  from the original note — still low priority, but flagging again since
-  it's the one piece of the recurrence work that wasn't part of this
-  round.
 - **Consider a native wrapper (Capacitor)** if you ever want App
   Store/Play Store presence beyond the current installable PWA.
 
@@ -695,26 +728,9 @@ the way for these; roughly in priority order.
   sync with the code.
 - Nothing here is committed to — treat priority labels as a starting
   suggestion, not a fixed order.
-- **Error Handling & Reliability is done** (see "Why it's built this way"
-  above for how) — pruned from this list rather than left checked off.
-- **Route code-splitting, the initial test suite, and the
-  `useRecurringReset` duplicate-update guard are done** (see "Why it's
-  built this way" above and [Testing](#testing)) — pruned from Technical /
-  Architecture Improvements above; interval-math accuracy and a native
-  wrapper are the only items still open there.
-- **Free-form tags on to-dos are done** (see "Why it's built this way"
-  above) — pruned from Feature Builds above.
-- **User-defined Trackers are done**, replacing the old fixed Garage/Armory
-  domains entirely (see "Why it's built this way" above) — pruned from
-  Feature Builds above.
-- **The migrations folder was folded back down to a single
-  `001_initial_schema.sql`** (see its own header and "Why it's built this
-  way" above) — it had grown to five files (four incremental on top of the
-  original), all long since applied to production, so it's back to one
-  file reflecting current state, same as the original schema.sql fold.
-- **Tracker field types are expanded beyond string/number**, and fields
-  can now be manually ordered — date, boolean, and select (with
-  user-defined options) joined string/number, plus a per-field `sortOrder`
-  that controls where each one lands on the dynamic item form (see "Why
-  it's built this way" above) — pruned from Technical / Architecture
-  Improvements above.
+- This section should only ever hold in-flight or upcoming work. Once an
+  item above ships, fold its details into wherever it actually belongs in
+  the main README — Features, Project structure, or "Why it's built this
+  way" — and drop it from here entirely rather than leaving a "done"
+  bullet behind; a changelog belongs in git history, not in a section
+  meant to say what's left.

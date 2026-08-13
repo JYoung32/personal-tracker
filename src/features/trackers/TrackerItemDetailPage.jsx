@@ -84,7 +84,7 @@ export function TrackerItemDetailPage() {
   );
 
   function handleAddMaintenanceTask(listId) {
-    return ({ text, frequency, recurringDay }) => {
+    return ({ text, frequency, recurringDay, recurringWeekOfMonth }) => {
       addTodo({
         text,
         description: null,
@@ -93,6 +93,7 @@ export function TrackerItemDetailPage() {
         dueDate: null,
         frequency,
         recurringDay,
+        recurringWeekOfMonth,
         priority: 'medium',
         trackerItemId: itemId,
         trackerItemListId: listId,

@@ -7,11 +7,10 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Chip from '@mui/material/Chip';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import { FREQUENCY_OPTIONS, PRIORITY_OPTIONS, DAY_OPTIONS } from '../../constants/taskOptions';
+import { FREQUENCY_OPTIONS, PRIORITY_OPTIONS, formatRecurringDayLabel } from '../../constants/taskOptions';
 import { ConfirmDeleteButton } from '../../components/common/ConfirmDeleteButton';
 
 const FREQUENCY_LABELS = Object.fromEntries(FREQUENCY_OPTIONS.map((opt) => [opt.value, opt.label]));
-const DAY_LABELS = Object.fromEntries(DAY_OPTIONS.map((opt) => [opt.value, opt.label]));
 
 const PRIORITY_COLORS = {
   low: 'text.secondary',
@@ -37,7 +36,7 @@ export function TodoItem({ todo, onToggleComplete, onDelete, onPriorityChange, s
   const dueDate = todo.dueDate ? parseDateOnly(todo.dueDate) : null;
   const isOverdue = dueDate && !todo.completed && dueDate < new Date(new Date().toDateString());
   const frequencyLabel = showFrequency
-    ? [FREQUENCY_LABELS[todo.frequency], DAY_LABELS[todo.recurringDay]].filter(Boolean).join(' · ')
+    ? [FREQUENCY_LABELS[todo.frequency], formatRecurringDayLabel(todo)].filter(Boolean).join(' · ')
     : null;
   const metaText = [frequencyLabel, todo.sourceLabel].filter(Boolean).join(' · ');
 

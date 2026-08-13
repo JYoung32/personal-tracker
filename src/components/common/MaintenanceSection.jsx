@@ -28,6 +28,7 @@ export function MaintenanceSection({
   onToggleComplete,
   onFrequencyChange,
   onRecurringDayChange,
+  onRecurringWeekOfMonthChange,
   onDelete,
   showHeading = false,
   defaultFrequency,
@@ -74,6 +75,7 @@ export function MaintenanceSection({
         onToggleComplete={onToggleComplete}
         onFrequencyChange={onFrequencyChange}
         onRecurringDayChange={onRecurringDayChange}
+        onRecurringWeekOfMonthChange={onRecurringWeekOfMonthChange}
         onDelete={onDelete}
         emptyMessage={emptyMessage}
         readOnlySchedule={readOnlySchedule}
